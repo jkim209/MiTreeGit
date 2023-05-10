@@ -7,7 +7,7 @@ Version: 1.0.0
 
 Maintainer: Jihun Kim <jihun.kim.3@stonybrook.edu>
 
-Description: MiTree is a unified web cloud analytic platform for user-friendly and interpretable microbiome data mining using tree-based methods. Machine learning is a promising approach to help such an effort especially due to the high complexity of microbiome data. However, many of the current machine learning algorithms are in a “black box”. They are hard to understand and interpret. Clinicians, public health practitioners or biologists are not also usually skilled at computer programming, and they do not always have a high-end computing device. MiTree employs tree-based learning methods, including decision tree, random forest and gradient boosting, that are both well understood and suited to human microbiome studies, for both classification and regression problems through covariate-adjusted or unadjusted analysis. 
+Description: MiTree is a unified web cloud analytic platform for user-friendly and interpretable microbiome data mining using tree-based methods. Machine learning is a promising approach to help such an effort especially due to the high complexity of microbiome data. However, many of the current machine learning algorithms are in a “black box”. They are hard to understand and interpret. Clinicians, public health practitioners or biologists are not also usually skilled at computer programming, and they do not always have a high-end computing device. MiTree employs tree-based learning methods, including 1) decision tree, 2) random forest and 3) gradient boosting, that are both well understood and suited to human microbiome studies, for both classification and regression problems through covariate-adjusted or unadjusted analysis. 
 
 NeedsCompilation: No
 
