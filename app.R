@@ -1,46 +1,41 @@
-rm(list = ls())
-
-# Make sure the shiny package is already installed before you launch the app. If not, please install shiny package first.
-if(!require('shiny')) install.packages("shiny")
-
-if(!require('BiocManager')) install.packages('BiocManager')
-if(!require('seqinr')) install.packages('seqinr')
-if(!require('shinydashboard')) install.packages('shinydashboard')
-if(!require('tidyverse')) install.packages('tidyverse')
-if(!require('plotly')) install.packages('plotly')
-if(!require('shinyWidgets')) install.packages('shinyWidgets')
-if(!require('shinyjs')) install.packages('shinyjs')
-if(!require('googleVis')) install.packages('googleVis')
-if(!require('xtable')) install.packages('xtable')
-if(!require('DT')) install.packages('DT')
-if(!require('htmltools')) install.packages('htmltools')
-if(!require('phangorn')) install.packages('phangorn')
-if(!require('bios2mds')) install.packages('bios2mds')
-if(!require('zip')) install.packages('zip')
-if(!require('ape')) install.packages('ape')
-if(!require('zCompositions')) install.packages('zCompositions')
-if(!require('compositions')) install.packages('compositions')
-if(!require('stringr')) install.packages('stringr')
-if(!require('rpart')) install.packages('rpart')
-if(!require('rpart.plot')) install.packages('rpart.plot')
-if(!require('caret')) install.packages('caret')
-if(!require('ggplot2')) install.packages('ggplot2')
-if(!require('randomForest')) install.packages('randomForest')
-if(!require('data.table')) install.packages('data.table')
-if(!require('xgboost')) install.packages('xgboost')
-if(!require('SHAPforxgboost')) install.packages('SHAPforxgboost')
-if(!require('fontawesome')) install.packages('fontawesome')
-if(!require('grid')) install.packages('grid')
-if(!require('ggplotify')) install.packages('ggplotify') # test
-if(!require('phyloseq')) BiocManager::install('phyloseq')
-if(!require('biomformat')) devtools::install_github('joey711/biomformat', subdir = 'pkg')
-if(!require('dashboardthemes')) remotes::install_github('nik01010/dashboardthemes', force = TRUE)
-if(!require('edarf')) devtools::install_github('zmjones/edarf', subdir = 'pkg')
-if(!require('chatgpt')) remotes::install_github('jcrodriguez1989/chatgpt')
+library(shiny)
+library(BiocManager)
+library(seqinr)
+library(shinydashboard)
+library(tidyverse)
+library(plotly)
+library(shinyWidgets)
+library(shinyjs)
+library(googleVis)
+library(xtable)
+library(DT)
+library(htmltools)
+library(phangorn)
+library(bios2mds)
+library(zip)
+library(ape)
+library(zCompositions)
+library(compositions)
+library(stringr)
+library(rpart)
+library(rpart.plot)
+library(caret)
+library(ggplot2)
+library(randomForest)
+library(data.table)
+library(xgboost)
+library(SHAPforxgboost)
+library(fontawesome)
+library(grid)
+library(ggplotify)
+library(phyloseq)
+library(biomformat)
+library(dashboardthemes)
+library(edarf)
+library(chatgpt)
 
 source("Source/MiDataProc.Data.Upload.R")
 source("Source/MiDataProc.Data.Input.R")
-source("Source/MiDataProc.Theme.R")
 source("Source/MiDataProc.ML.Models.R")
 source("Source/MiDataProc.ML.DT.R")
 source("Source/MiDataProc.ML.RF.R")
@@ -58,7 +53,7 @@ source("Source/MiDataProc.ML.XGB.R")
   HOME_COMMENT2 = p(strong("URLs:"), "Web server (online implementation):", tags$a(href = "http://mitree.micloud.kr", "http://mitree.micloud.kr"), 
                     "; GitHub repository (local implementation):", 
                     tags$a(href = "https://github.com/jkim209/MiTreeGit", "https://github.com/jkim209/MiTreeGit"), style = "font-size:13pt")
-  HOME_COMMENT3 = p(strong("Maintainers:"), "Ji Hun Kim (", tags$a(href = "jihun.kim.3@stonybrook.edu", "jihun.kim.3@stonybrook.edu"), ")", style = "font-size:13pt")
+  HOME_COMMENT3 = p(strong("Maintainers:"), "Jihun Kim (", tags$a(href = "jihun.kim.3@stonybrook.edu", "jihun.kim.3@stonybrook.edu"), ")", style = "font-size:13pt")
   HOME_COMMENT4 = p(strong("Reference:"), "Kim J, Koh H. MiTree: A unified web cloud analytic platform for user-friendly and interpretable microbiome data mining using tree-based methods (in review)", style = "font-size:13pt")
   
   INPUT_PHYLOSEQ_COMMENT1 = p("Description:", br(), br(), "This should be an '.Rdata' or '.rds' file, and the data should be in 'phyloseq' format (see ", 
@@ -158,7 +153,110 @@ source("Source/MiDataProc.ML.XGB.R")
                            menuSubItem("Random Forest", tabName = "rf", icon = fontawesome::fa("network-wired")),
                            menuSubItem("Gradient Boosting", tabName = "xgb", icon = fontawesome::fa("diagram-project"))))),
     dashboardBody(
-      customTheme,
+      # Custom Theme -----
+      shinyDashboardThemeDIY(
+        
+        # general
+        appFontFamily = "Arial"
+        ,appFontColor = "rgb(0,0,0)"
+        ,primaryFontColor = "rgb(0,0,0)"
+        ,infoFontColor = "rgb(0,0,0)"
+        ,successFontColor = "rgb(0,0,0)"
+        ,warningFontColor = "rgb(0,0,0)"
+        ,dangerFontColor = "rgb(0,0,0)"
+        ,bodyBackColor = "rgb(255,255,255)"
+        
+        # header
+        ,logoBackColor = "rgb(2,123,255)"
+        
+        ,headerButtonBackColor = "rgb(2,123,255)"
+        ,headerButtonIconColor = "rgb(2,123,255)"
+        ,headerButtonBackColorHover = "rgb(2,123,255)"
+        ,headerButtonIconColorHover = "rgb(0,0,0)"
+        
+        ,headerBackColor = "rgb(2,123,255)"
+        ,headerBoxShadowColor = "#aaaaaa"
+        ,headerBoxShadowSize = "0px 0px 0px"
+        
+        # sidebar
+        ,sidebarBackColor = "rgb(24,31,41)"
+        ,sidebarPadding = 0
+        
+        ,sidebarMenuBackColor = "transparent"
+        ,sidebarMenuPadding = 0
+        ,sidebarMenuBorderRadius = 0
+        
+        ,sidebarShadowRadius = ""
+        ,sidebarShadowColor = "0px 0px 0px"
+        
+        ,sidebarUserTextColor = "rgb(24,31,41)"
+        
+        ,sidebarSearchBackColor = "rgb(255, 255, 255)"
+        ,sidebarSearchIconColor = "rgb(24,31,41)"
+        ,sidebarSearchBorderColor = "rgb(24,31,41)"
+        
+        ,sidebarTabTextColor = "rgb(210,210,210)"
+        ,sidebarTabTextSize = 14
+        ,sidebarTabBorderStyle = "none"
+        ,sidebarTabBorderColor = "none"
+        ,sidebarTabBorderWidth = 0
+        
+        ,sidebarTabBackColorSelected = "rgb(45,52,63)"
+        ,sidebarTabTextColorSelected = "rgb(252,255,255)"
+        ,sidebarTabRadiusSelected = "0px"
+        
+        ,sidebarTabBackColorHover = "rgb(67,75,86)"
+        ,sidebarTabTextColorHover = "rgb(252,255,255)"
+        ,sidebarTabBorderStyleHover = "none"
+        ,sidebarTabBorderColorHover = "none"
+        ,sidebarTabBorderWidthHover = 0
+        ,sidebarTabRadiusHover = "0px"
+        
+        # boxes
+        ,boxBackColor = "rgb(245,245,245)"
+        ,boxBorderRadius = 3
+        ,boxShadowSize = "0px 0px 0px"
+        ,boxShadowColor = "rgba(0,0,0,0)"
+        ,boxTitleSize = 16
+        ,boxDefaultColor = "rgb(210,214,220)"
+        ,boxPrimaryColor = "rgb(35, 49, 64)"
+        ,boxInfoColor = "rgb(2,123,255)"
+        ,boxSuccessColor = "rgb(112,173,71)"
+        ,boxWarningColor = "rgb(244,156,104)"
+        ,boxDangerColor = "rgb(255,88,55)"
+        
+        ,tabBoxTabColor = "rgb(255,255,255)"
+        ,tabBoxTabTextSize = 14
+        ,tabBoxTabTextColor = "rgb(0,0,0)"
+        ,tabBoxTabTextColorSelected = "rgb(35, 49, 64)"
+        ,tabBoxBackColor = "rgb(255,255,255)"
+        ,tabBoxHighlightColor = "rgb(2,123,255)"
+        ,tabBoxBorderRadius = 0
+        
+        # inputs
+        ,buttonBackColor = "rgb(245,245,245)"
+        ,buttonTextColor = "rgb(0,0,0)"
+        ,buttonBorderColor = "rgb(24,31,41)"
+        ,buttonBorderRadius = 3
+        
+        ,buttonBackColorHover = "rgb(227,227,227)"
+        ,buttonTextColorHover = "rgb(100,100,100)"
+        ,buttonBorderColorHover = "rgb(200,200,200)"
+        
+        ,textboxBackColor = "rgb(255,255,255)"
+        ,textboxBorderColor = "rgb(200,200,200)"
+        ,textboxBorderRadius = 0
+        ,textboxBackColorSelect = "rgb(245,245,245)"
+        ,textboxBorderColorSelect = "rgb(200,200,200)"
+        
+        # tables
+        ,tableBackColor = "rgb(255, 255, 255)"
+        ,tableBorderColor = "rgb(245, 245, 245)"
+        ,tableBorderTopSize = 1
+        ,tableBorderRowSize = 1
+        
+      ),
+      
       tags$head(tags$style(HTML(".content { padding-top: 2px;}"))),
       tags$script(src = "fileInput_text.js"),
       tags$head(tags$style(HTML('.progress-bar {background-color: rgb(2,144,255);}'))),
@@ -362,7 +460,7 @@ source("Source/MiDataProc.ML.XGB.R")
 # SERVER -----------------------------------------------------------------------
 server = function(input, output, session){
   options(shiny.maxRequestSize=30*1024^2)
-  
+
   env <- new.env()
   nm <- load(file = "Data/sub.1.con.biom.Rdata", env)[1]
   sub.1.con.biom <- env[[nm]]
@@ -871,8 +969,8 @@ server = function(input, output, session){
   })
   
   observe({
-      toggleState("dt_cla_runButton", (input$dt_cla_covariate_yn == "None") | ((input$dt_cla_covariate_yn == "Covariate(s)") & (length(input$dt_cla_covariate_options) != 0)) | ((input$dt_cla_minsplit > 0) & (input$dt_cla_minbucket > 0)))
-    })
+    toggleState("dt_cla_runButton", (input$dt_cla_covariate_yn == "None") | ((input$dt_cla_covariate_yn == "Covariate(s)") & (length(input$dt_cla_covariate_options) != 0)) | ((input$dt_cla_minsplit > 0) & (input$dt_cla_minbucket > 0)))
+  })
   
   ## (2-2) DT - Regression ---------------------------
   output$dt_reg_data_input <- renderUI({
@@ -988,7 +1086,7 @@ server = function(input, output, session){
                          c("Gini impurity (Default)"), selected = "Gini impurity (Default)", icon = icon("check"), width = '70%'),
       prettyRadioButtons("rf_cla_cov_loss", label = h4(strong("Loss function", style = "color:black")), animation = "jelly",
                          c("Mean squared error (Default)"), selected = "Mean squared error (Default)", icon = icon("check"), width = '70%'),
-
+      
       p(" ", style = "margin-top: 25px;"),
       h4(strong("# folds", style = "color:black")),
       p("The number of non-overlapping folds of the data to be used in cross-validations.", style = "font-size:10pt"),
@@ -1157,7 +1255,7 @@ server = function(input, output, session){
         to boost the tree sufficiently, but it can be at the cost of heavy computation. (Default: 5,000)", style = "font-size:10pt"),
       p(" ", style = "margin-bottom: +15px;"),
       selectInput("xgb_cla_nrounds", label = NULL, c("Choose one" = "", c(3000, 5000, 10000)), selected = 5000, width = '70%'),
-
+      
       p(" ", style = "margin-top: 25px;"),
       h4(strong("Learning rate", style = "color:black")),
       p("The rate of a newly fitted tree to be reflected into the aggregation (update). A low learning rate (e.g., 0.001) is recommended to elaborate the boosting process through slow learning, but it is at the cost of heavy computations. (Default: 0.005)", style = "font-size:10pt"),
@@ -1166,13 +1264,13 @@ server = function(input, output, session){
       
       prettyRadioButtons("xgb_cla_penalty", label = h4(strong("Regularization", style = "color:black")), animation = "jelly",
                          c("Yes (Default)", "No"), selected = "Yes (Default)", icon = icon("check"), width = "70%"),
-
+      
       p(" ", style = "margin-top: 25px;"),
       h4(strong("# taxa to be displayed", style = "color:black")),
       p("The maximum number of taxa per taxonomic rank to be displayed in plots.", style = "font-size:10pt"),
       p(" ", style = "margin-bottom: +15px;"),
       sliderInput("xgb_cla_var_num", label = NULL, min = 5, max = 20, value = 20, step = 5),
-
+      
       prettyRadioButtons("xgb_cla_include_species", label = h4(strong("Taxonomic ranks", style = "color:black")), animation = "jelly",
                          c("Phylum - Genus (Default)", "Phylum - Species"), selected = "Phylum - Genus (Default)",
                          icon = icon("check"), width = '80%'),
@@ -1258,7 +1356,7 @@ server = function(input, output, session){
             to elaborate the boosting process through slow learning, but it is at the cost of heavy computations. (Default: 0.005)", style = "font-size:10pt"),
       p(" ", style = "margin-bottom: +15px;"),
       selectInput("xgb_reg_eta", label = NULL, c("Choose one" = "", c(0.001, 0.005, 0.01, 0.05)), selected = 0.005, width = '70%'),
-
+      
       prettyRadioButtons("xgb_reg_penalty", label = h4(strong("Regularization", style = "color:black")), animation = "jelly",
                          c("Yes (Default)", "No"), selected = "Yes (Default)", icon = icon("check"), width = "70%"),
       
@@ -1895,7 +1993,7 @@ server = function(input, output, session){
             )
           })
         })
-       
+        
         dt_cla_imp_var_list <- list()
         for(name in level.names){
           dt_cla_imp_var_list[[name]] <- dt.used.var.names(dt.list, name, colnames.list.cla)
@@ -2090,14 +2188,14 @@ server = function(input, output, session){
           incProgress(1/10, message = sprintf("Decision Tree: %s in Progress", str_to_title(name)))
           set.seed(578)
           fit[[name]] <- try(dt.reg(data = data,
-                                            sam.dat.na = sam.dat.na,
-                                            y.name = y.name,
-                                            minsplit = as.numeric(input$dt_reg_minsplit),
-                                            minbucket = as.numeric(input$dt_reg_minbucket),
-                                            nfold = nfold,
-                                            name = name,
-                                            p = 1),
-                                     silent = TRUE)
+                                    sam.dat.na = sam.dat.na,
+                                    y.name = y.name,
+                                    minsplit = as.numeric(input$dt_reg_minsplit),
+                                    minbucket = as.numeric(input$dt_reg_minbucket),
+                                    nfold = nfold,
+                                    name = name,
+                                    p = 1),
+                             silent = TRUE)
         }
         
         dt.summary.table.list <- list()
@@ -2350,7 +2448,7 @@ server = function(input, output, session){
         if(!is.null(chat_result)){
           output$dt_reg_chatgpt_vis <-renderUI({
             tagList(br(), strong(paste("Tell me about the roles of a", taxa.name, "on a", var.name)), br(), p(chat_result))
-            })
+          })
         }
         
       }
@@ -3028,9 +3126,9 @@ server = function(input, output, session){
       detail = "This may take a while...", value = 0, {
         incProgress(0.5, message = "Asking Chat GPT")
         
-        taxa.name <- input$reg_rf_rename_taxa
-        var.name <- input$reg_rf_response_var_rename
-        api.key <- input$reg_rf_chatgpt_key
+        taxa.name <- input$rf_reg_rename_taxa
+        var.name <- input$rf_reg_response_var_rename
+        api.key <- input$rf_reg_chatgpt_key
         
         chat_result <- tryCatch(chat_gpt_MiTree(taxa.name, var.name, api.key), error = function(e){
           message("Invalid or incorrect API key. Please check it again.")
@@ -3039,14 +3137,13 @@ server = function(input, output, session){
         })
         
         if(!is.null(chat_result)){
-          output$reg_rf_chatgpt_vis <-renderUI({
+          output$rf_reg_chatgpt_vis <-renderUI({
             tagList(br(), strong(paste("Tell me about the roles of a", taxa.name, "on a", var.name)), br(), p(chat_result))
           })
         }
       }
     )
   })
-  
   
   ## (4-1) XGB - Classification -------------------
   observeEvent(input$xgb_cla_runButton, {
