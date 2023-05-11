@@ -19,8 +19,8 @@ License: GPL 1, GPL 2
 
 ## URLs
 
-* Web application (online implementation): http://mitree.micloud.kr
-* GitHub repository (local implementation): https://github.com/jkim209/MiMedGit
+* Web application (online implementation): http://mitree.micloud.kr (in preparation)
+* GitHub repository (local implementation): https://github.com/jkim209/MiTreeGit
 
 ## References
 
