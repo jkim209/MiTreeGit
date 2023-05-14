@@ -148,77 +148,6 @@ xgb.reg <- function(data, sam.dat.na, y.name, eta = 0.001, nrounds = 500, nfold 
   return(xgb.list)
 }
 
-xgb.mult <- function(data, sam.dat.na, y.name, p = 0.75, eta = 0.001, nfold = c(5, 10), nrounds = 500, alpha = 0, lambda = 1, stratified = TRUE,
-                     loss.func = c("mlogloss", "merror"), name){
-  xgb.list <- list()
-  X = as.matrix(data[[name]])
-  y = sam.dat.na[[y.name]]
-  cat.names <- category.names(sam.dat.na, y.name)
-  
-  tr.ind <- y %>% createDataPartition(p = p, list = FALSE)
-  train_X <- X[tr.ind,]
-  train_Y <- y[tr.ind]
-  
-  test_X <- X[-tr.ind,]
-  test_Y <- y[-tr.ind]
-  
-  dtrain <- xgb.DMatrix(data = train_X, label = train_Y)
-  dtest <- xgb.DMatrix(data = test_X, label = test_Y)
-  
-  # Tuning Proceses
-  searchGridSubCol <- expand.grid(max_depth = seq(4, 10, 2), # 4
-                                  min_child_weight = seq(2, 6, 2), # 3
-                                  colsample_bytree = seq(0.5, 0.75, 1), # 3
-                                  gamma = seq(0, 0.6, 0.2)) # 4
-  
-  system.time(
-    hyper.parameter.tuning.1 <- apply(searchGridSubCol, 1, function(parameterList){
-      #Extract Parameters to test
-      currentMaxDepth <- parameterList[["max_depth"]]
-      currentMCW <- parameterList[["min_child_weight"]]
-      currentCbT <- parameterList[["colsample_bytree"]]
-      currentGamma <- parameterList[["gamma"]]
-      xgboostModelCV <- xgb.cv(data =  dtrain, nrounds = nrounds, nfold = nfold, showsd = TRUE, stratified = stratified,
-                               metrics = loss.func, verbose = TRUE, eval_metric = loss.func, num_class = length(cat.names),
-                               objective = "multi:softmax", max_depth = currentMaxDepth, min_child_weight = currentMCW, eta = eta,
-                               print_every_n = 10, booster = "gbtree", gamma = currentGamma, colsample_bytree = currentCbT,
-                               early_stopping_rounds = 150, nthread = 1)
-      
-      xvalidationScores <- as.data.frame(xgboostModelCV$evaluation_log)
-      niter <- xgboostModelCV$best_iteration
-      test <- as.numeric(tail(xvalidationScores[,4], 1))
-      train <- as.numeric(tail(xvalidationScores[,2],1))
-      output <- return(c(niter, train, test, currentMaxDepth, currentMCW, currentCbT, currentGamma))})
-  )
-  
-  output <- as.data.frame(t(hyper.parameter.tuning.1))
-  varnames <- c("Optimal_trees", "Train", "Test", "max_depth", "min_child_weight", "colsample_bytree", "gamma")
-  names(output) <- varnames
-  
-  opt.tree <- output[which.min(output$Test),][[1]]
-  max_depth <- output[which.min(output$Test),][[4]]
-  min_child_weight <- output[which.min(output$Test),][[5]]
-  colsample_bytree <- output[which.min(output$Test),][[6]]
-  gamma <- output[which.min(output$Test),][[7]]
-  
-  watchlist <- list(train = dtrain, eval = dtest)
-  
-  xgboostFit <- xgb.train(data = dtrain, nrounds = nrounds, showsd = TRUE, objective = "multi:softmax", watchlist = watchlist, tree_method = "exact",
-                          verbose = TRUE, eval_metric = loss.func, num_class = length(cat.names), colsample_bytree = colsample_bytree,
-                          max_depth = max_depth, min_child_weight = min_child_weight, eta = eta, print_every_n = 10, booster = "gbtree",
-                          gamma = gamma, alpha = alpha, lambda = lambda, early_stopping_rounds = 100, nthread = 1)
-  
-  pred <- xgboostFit %>% predict(dtest)
-  
-  xgb.list[["model"]] <- xgboostFit
-  xgb.list[["loss.func"]] <- loss.func
-  xgb.list[["tuning.result"]] <- output
-  xgb.list[["pred"]] <- pred
-  xgb.list[["train"]] <- list(x = train_X, y = train_Y)
-  xgb.list[["test"]] <- list(x = test_X, y = test_Y)
-  return(xgb.list)
-}
-
 xgb.error.plot.2 <- function(xgb.list, rank.name){
   options(scipen = 999)
   eval.log <- xgb.list[[rank.name]][["cv.model"]]$evaluation_log
@@ -246,7 +175,8 @@ xgb.error.plot.2 <- function(xgb.list, rank.name){
              nround = rep(1:nrow(eval.log), 2)) %>%
     ggplot(aes(nround, error, col = class)) +
     # geom_point(alpha = 0.2) +
-    geom_smooth(alpha = 0.4, se = FALSE) +
+    geom_line(linetype = "solid", linewidth = 1.2) +
+    # geom_smooth(alpha = 0.4, se = FALSE) +
     theme_bw() +
     ggtitle("XGBoost Final Model",
             subtitle = sprintf("Level : %s  Iterations : %i", str_to_title(rank.name), dim(eval.log)[1])) +
