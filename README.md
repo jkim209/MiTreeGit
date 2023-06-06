@@ -29,7 +29,8 @@ License: GPL 1, GPL 2
 
 ## Prerequites
 
-#### Notice: For the local implementation, you do not need to install all the pre-requite R packages individually. You only need to install the 'shiny' package, and then run a simple command in 'Launch App' below. Then, all the pre-requisite R packages will be installed and imported automatically. 
+#### Notice: For the local implementation, you do not need to install all the pre-requite R packages individually. You only need to install the 'shiny' package, and then run a simple command in 'Launch App' below. Then, all the pre-requisite R packages will be installed and imported automatically. For MAC users, please make sure that you have to dowload and install xQuartz before the local implementation. (https://www.xquartz.org/)
+
 
 shiny
 ```
