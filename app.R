@@ -1,3 +1,17 @@
+ls.pkg <- c('shiny', 'rmarkdown', 'seqinr', 'shinydashboard', 'tidyverse', 'plotly', 'shinyWidgets', 'shinyjs', 'googleVis', 'xtable',
+            'DT', 'htmltools', 'phangorn', 'bios2mds', 'zip', 'ape', 'zCompositions', 'compositions', 'stringr', 'rpart', 'rpart.plot', 
+            'caret', 'ggplot2', 'randomForest', 'data.table', 'xgboost', 'SHAPforxgboost', 'fontawesome', 'grid', 'ggplotify',
+            'BiocManager', 'remotes')
+
+new.pkg <- ls.pkg[!(ls.pkg %in% installed.packages()[,"Package"])]
+if(length(new.pkg)) install.packages(new.pkg, repos = 'https://cloud.r-project.org/')
+
+if(!require('phyloseq')) BiocManager::install('phyloseq')
+if(!require('biomformat')) remotes::install_github('joey711/biomformat')
+if(!require('dashboardthemes')) remotes::install_github('nik01010/dashboardthemes', force = TRUE)
+if(!require('chatgpt')) remotes::install_github('jcrodriguez1989/chatgpt')
+if(!require('edarf')) remotes::install_github('zmjones/edarf', subdir = 'pkg')
+
 library(shiny)
 library(BiocManager)
 library(seqinr)
