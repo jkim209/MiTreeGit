@@ -117,10 +117,10 @@ str.check <- function(sam.dat, y.name){
   if(len == 2){
     return("Binary")
   }
-  else if(len == 3 | len == 4){
+  else if(len >= 3 & len <= 8){
     return("Multinomial")
   }
-  else if(len > 4 & is.numeric(var)){
+  else if(len > 8 & is.numeric(var)){
     return("Continuous")
   }
   else {
@@ -137,9 +137,23 @@ bmc.col.check <- function(sam.dat, type = c("Binary", "Multinomial", "Continuous
   return(colnames(sam.dat[,ind]))
 }
 
+col.str.check <- function(sam.dat, name){
+  dtype <- character()
+  
+  if((is.character(sam.dat[[name]])) | (is.factor(sam.dat[[name]]))) {
+    dtype <- "factor"
+  }
+  else if(is.numeric(sam.dat[[name]])){
+    if(length(table(sam.dat[[name]])) == 2) dtype = "factor"
+    else dtype = "numeric"
+  }
+  else dtype = "none"
+  return(dtype)
+}
+  
 get.cat.levels <- function(sam.dat, y.name){
   levels <- levels(as.factor(unlist(sam.dat$gingival_index)))
-  if(length(levels) >= 2 & length(levels) <= 4){
+  if(length(levels) >= 2 & length(levels) <= 8){
     return(levels)
   }
   else{
@@ -190,4 +204,20 @@ chat_gpt_MiTree <- function(taxa.name, var.name, api.key){
   past_question <- paste("Tell me about the roles of", taxa.name, "on", var.name)
   chat <- ask_chatgpt(past_question)
   return(chat)
+}
+
+check.column.class <- function(sam.dat.na){
+  for(name in colnames(sam.dat.na)){
+    type <- col.str.check(sam.dat.na, name)
+    if(type == "factor"){
+      sam.dat.na[[name]] <- as.factor(sam.dat.na[[name]])
+    }
+    else if(type == "numeric"){
+      sam.dat.na[[name]] <- as.numeric(sam.dat.na[[name]])
+    }
+    else{
+      sam.dat.na[[name]] <- sam.dat.na[[name]]
+    }
+  }
+  return(sam.dat.na)
 }
