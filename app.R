@@ -361,7 +361,7 @@ source("Source/MiDataProc.ML.XGB.R")
         
         ## Data Transformation -----
         tabItem(tabName = "dataTransform", br(),
-                column(width = 6, style='padding-left:+13px',
+                column(width = 6, style='padding-left:0px',
                        box(title = strong("Data Transformation", style = "color:white"), width = NULL, status = "info", solidHeader = TRUE,
                            DATA_TRANSFORM_COMMENT,
                            actionButton("datTransRun", (strong("Run!")), class = "btn-info"),
