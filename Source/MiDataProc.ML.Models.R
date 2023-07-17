@@ -152,7 +152,7 @@ col.str.check <- function(sam.dat, name){
 }
   
 get.cat.levels <- function(sam.dat, y.name){
-  levels <- levels(as.factor(unlist(sam.dat$gingival_index)))
+  levels <- levels(as.factor(unlist(sam.dat[[y.name]])))
   if(length(levels) >= 2 & length(levels) <= 8){
     return(levels)
   }
