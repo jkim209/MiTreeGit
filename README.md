@@ -3,9 +3,9 @@
 Title: MiTree: A unified web cloud analytic platform for user-friendly and interpretable microbiome data mining using tree-based methods
 
 
-Version: 1.0.0
+Version: 1.0.1
 
-Maintainer: Jihun Kim <jihun.kim.3@stonybrook.edu>
+Maintainer: Jihun Kim <toujours209@gmail.com>
 
 Description: MiTree is a unified web cloud analytic platform for user-friendly and interpretable microbiome data mining using tree-based methods. Machine learning is a promising approach to help such an effort especially due to the high complexity of microbiome data. However, many of the current machine learning algorithms are in a “black box”. They are hard to understand and interpret. Clinicians, public health practitioners or biologists are not also usually skilled at computer programming, and they do not always have a high-end computing device. MiTree employs tree-based learning methods, including 1) decision tree, 2) random forest and 3) gradient boosting, that are both well understood and suited to human microbiome studies, for both classification and regression problems through covariate-adjusted or unadjusted analysis. 
 
@@ -13,7 +13,7 @@ NeedsCompilation: No
 
 Depends: R(≥ 4.1.0)
 
-Imports: Bioconductor ('BiocManager', 'biomformat', 'phyloseq'); CRAN ('ape', 'bio2mds', 'caret', 'chatgpt', 'compositions', 'data.table', 'DT', 'fontawesome', 'ggplot2', 'ggplotify', 'googleVis', 'grid', 'htmltools', 'phangorn', 'plotly', 'randomForest', 'rpart', 'rpart.plot', 'seqinr', 'SHAPforxgboost', 'shiny', 'shinydashboard', 'shinyjs', 'shinyWidgets', 'stringr', 'tidyverse', 'xgboost', 'xtable', 'zCompositions'**(1.4.0.1)**, 'zip'); GitHub: ('chatgpt', 'dashboardthemes, 'edarf')
+Imports: Bioconductor ('BiocManager', 'biomformat', 'phyloseq'); CRAN ('ape', 'bio2mds', 'caret', 'chatgpt', 'compositions', 'data.table', 'DT', 'ecodist', 'fontawesome', 'fossil', 'ggplot2', 'ggplotify', 'googleVis', 'grid', 'htmltools', 'phangorn', 'picante', 'plotly', 'randomForest', 'ROCR', 'rpart', 'rpart.plot', 'seqinr', 'SHAPforxgboost', 'shiny', 'shinydashboard', 'shinyjs', 'shinyWidgets', 'stringr', 'tidyverse', 'xgboost', 'xtable', 'zCompositions'**(1.4.0.1)**, 'zip'); GitHub: ('chatgpt', 'dashboardthemes, 'edarf')
 
 License: GPL 1, GPL 2 
 
