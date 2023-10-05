@@ -1,7 +1,7 @@
 ls.pkg <- c('shiny', 'rmarkdown', 'seqinr', 'shinydashboard', 'tidyverse', 'plotly', 'shinyWidgets', 'shinyjs', 'googleVis', 'xtable',
-            'DT', 'htmltools', 'phangorn', 'bios2mds', 'zip', 'ape', 'zCompositions', 'compositions', 'stringr', 'rpart', 'rpart.plot', 
+            'DT', 'htmltools', 'phangorn', 'bios2mds', 'zip', 'ape', 'compositions', 'stringr', 'rpart', 'rpart.plot', 
             'caret', 'ggplot2', 'randomForest', 'data.table', 'xgboost', 'SHAPforxgboost', 'fontawesome', 'grid', 'ggplotify',
-            'BiocManager', 'remotes')
+            'BiocManager', 'remotes', 'reshape2', 'fossil', 'ROCR', 'picante', 'ecodist', 'devtools')
 
 new.pkg <- ls.pkg[!(ls.pkg %in% installed.packages()[,"Package"])]
 if(length(new.pkg)) install.packages(new.pkg, repos = 'https://cloud.r-project.org/')
@@ -28,7 +28,6 @@ library(phangorn)
 library(bios2mds)
 library(zip)
 library(ape)
-library(zCompositions)
 library(compositions)
 library(stringr)
 library(rpart)
@@ -47,6 +46,11 @@ library(biomformat)
 library(dashboardthemes)
 library(edarf)
 library(chatgpt)
+library(reshape2)
+library(devtools)
+
+install_version("zCompositions", version = "1.4.0.1", repos = "http://cran.us.r-project.org")
+library(zCompositions)
 
 source("Source/MiDataProc.Data.Upload.R")
 source("Source/MiDataProc.Data.Input.R")
@@ -67,7 +71,7 @@ source("Source/MiDataProc.ML.XGB.R")
   HOME_COMMENT2 = p(strong("URLs:"), "Web server (online implementation):", tags$a(href = "http://mitree.micloud.kr", "http://mitree.micloud.kr"), 
                     "; GitHub repository (local implementation):", 
                     tags$a(href = "https://github.com/jkim209/MiTreeGit", "https://github.com/jkim209/MiTreeGit"), style = "font-size:13pt")
-  HOME_COMMENT3 = p(strong("Maintainers:"), "Jihun Kim (", tags$a(href = "jihun.kim.3@stonybrook.edu", "jihun.kim.3@stonybrook.edu"), ")", style = "font-size:13pt")
+  HOME_COMMENT3 = p(strong("Maintainers:"), "Jihun Kim (", tags$a(href = "toujours209@gmail.com", "toujours209@gmail.com"), ")", style = "font-size:13pt")
   HOME_COMMENT4 = p(strong("Reference:"), "Kim J, Koh H. MiTree: A unified web cloud analytic platform for user-friendly and interpretable microbiome data mining using tree-based methods (in review)", style = "font-size:13pt")
   
   INPUT_PHYLOSEQ_COMMENT1 = p("Description:", br(), br(), "This should be an '.Rdata' or '.rds' file, and the data should be in 'phyloseq' format (see ", 
@@ -120,7 +124,8 @@ source("Source/MiDataProc.ML.XGB.R")
   QC_TAXA_NAME_COMMENT2 = p("Remove taxonomic names in the taxonomic table that are partially matched with the specified character strings (i.e., taxonomic names that contain 
                             the specified character strings). Multiple character strings should be separated by a comma. Default is \"uncultured\", \"incertae\", \"Incertae\",
                             \"unidentified\", \"unclassified\", \"unknown\".",style = "font-size:11pt")
-
+  QC_BATCH_REFERENCE = p("1. Ling W, Lu J, Zhao N. et al. Batch effects removal for microbiome data via conditional quantile regression. Nat Commun. 2022;13(5418)")
+  
   DATA_TRANSFORM_COMMENT = p("Transform the data into four different formats (1) CLR (centered log ratio) (Aitchison, 1982), (2) Count (Rarefied) (Sanders, 1968), (3) Proportion, (4) Arcsine-root 
                              for each taxonomic rank (phylum, class, order, familiy, genus, species).")
   DATA_TRANSFORM_REFERENCE = p("1. Aitchison J. The statistical analysis of compositional data. J R Stat Soc B. 1982;44(2):139-77", br(),
@@ -159,13 +164,19 @@ source("Source/MiDataProc.ML.XGB.R")
       sidebarMenu(id = "side_menu",
                   menuItem("Home", tabName = "home"),
                   menuItem("Data Processing",
-                           menuSubItem("Data Input", tabName = "step1", icon = fontawesome::fa("upload", margin_left = "0.3em", margin_right = "0.1em")),
-                           menuSubItem("Quality Control", tabName = "step2", icon = fontawesome::fa("chart-bar", margin_left = "0.3em")),
-                           menuSubItem("Data Transformation", tabName = "dataTransform", icon = fontawesome::fa("calculator", margin_left = "0.3em", margin_right = "0.25em"))),
+                           menuSubItem("Data Input", tabName = "step1", 
+                                       icon = fontawesome::fa("upload", margin_left = "0.3em", margin_right = "0.1em")),
+                           menuSubItem("Quality Control", tabName = "step2", 
+                                       icon = fontawesome::fa("chart-bar", margin_left = "0.3em")),
+                           menuSubItem("Data Transformation", tabName = "dataTransform", 
+                                       icon = fontawesome::fa("calculator", margin_left = "0.3em", margin_right = "0.25em"))),
                   menuItem("Data Mining",
-                           menuSubItem("Decision Tree", tabName = "dt", icon = fontawesome::fa("tree", margin_left = "0.2em", margin_right = "0.1em")),
-                           menuSubItem("Random Forest", tabName = "rf", icon = fontawesome::fa("network-wired")),
-                           menuSubItem("Gradient Boosting", tabName = "xgb", icon = fontawesome::fa("diagram-project"))))),
+                           menuSubItem("Decision Tree", tabName = "dt", 
+                                       icon = fontawesome::fa("tree", margin_left = "0.2em", margin_right = "0.1em")),
+                           menuSubItem("Random Forest", tabName = "rf", 
+                                       icon = fontawesome::fa("network-wired")),
+                           menuSubItem("Gradient Boosting", tabName = "xgb", 
+                                       icon = fontawesome::fa("diagram-project"))))),
     dashboardBody(
       # Custom Theme -----
       shinyDashboardThemeDIY(
@@ -274,7 +285,6 @@ source("Source/MiDataProc.ML.XGB.R")
       tags$head(tags$style(HTML(".content { padding-top: 2px;}"))),
       tags$script(src = "fileInput_text.js"),
       tags$head(tags$style(HTML('.progress-bar {background-color: rgb(2,144,255);}'))),
-      # setSliderColor(rep("#0290ff", 100), seq(1, 100)),
       useShinyjs(),
       tabItems(
         
@@ -300,64 +310,85 @@ source("Source/MiDataProc.ML.XGB.R")
         
         ## QC ----
         tabItem(tabName = "step2", br(),
-          sidebarLayout(
-            position = "left",
-            sidebarPanel(width = 3,
-                         textInput("kingdom", h4(strong("Kingdom")), value = "Bacteria"),
-                         QC_KINGDOM_COMMENT,
-                         tags$style(type = 'text/css', '#slider1 .irs-grid-text {font-size: 1px}'),
-                         tags$style(type = 'text/css', '#slider2 .irs-grid-text {font-size: 1px}'),
-                         
-                         sliderInput("slider1", h4(strong("Library size")), min=0, max=10000, value = 3000, step = 1000),
-                         QC_LIBRARY_SIZE_COMMENT1,
-                         QC_LIBRARY_SIZE_COMMENT2,
-                         
-                         sliderInput("slider2", h4(strong("Mean proportion")), min = 0, max = 0.1, value = 0.002, step = 0.001,  post  = " %"),
-                         QC_MEAN_PROP_COMMENT1,
-                         QC_MEAN_PROP_COMMENT2,
-                         
-                         br(),
-                         p(" ", style = "margin-bottom: -20px;"),
-                         
-                         h4(strong("Erroneous taxonomic names")),
-                         textInput("rem.str", label = "Complete match", value = ""),
-                         QC_TAXA_NAME_COMMENT1,
-                         
-                         textInput("part.rem.str", label = "Partial match", value = ""),
-                         QC_TAXA_NAME_COMMENT2,
-                         
-                         actionButton("run", (strong("Run!")), class = "btn-info"), 
-                         p(" ", style = "margin-bottom: +10px;"), 
-                         p(strong("Attention:"),"You have to click this Run button to perform data transformation and further analyses.", style = "margin-bottom:-10px"), br(),
-                         uiOutput("moreControls")),
-            mainPanel(width = 9,
-                      fluidRow(width = 12,
-                               status = "info", solidHeader = TRUE, 
-                               valueBoxOutput("sample_Size", width = 3),
-                               valueBoxOutput("OTUs_Size", width = 3),
-                               valueBoxOutput("phyla", width = 3),
-                               valueBoxOutput("classes", width = 3)),
-                      fluidRow(width = 12, 
-                               status = "info", solidHeader = TRUE,
-                               valueBoxOutput("orders", width = 3),
-                               valueBoxOutput("families", width = 3),
-                               valueBoxOutput("genera", width = 3),
-                               valueBoxOutput("species", width = 3)),
-                      fluidRow(style = "position:relative",
-                               tabBox(width = 6, title = strong("Library Size", style = "color:black"), 
-                                      tabPanel("Histogram",
-                                               plotlyOutput("hist"),
-                                               sliderInput("binwidth", "# of Bins:",min = 0, max = 100, value = 50, width = "100%"),
-                                               chooseSliderSkin("Round", color = "#112446")),
-                                      tabPanel("Box Plot", 
-                                               plotlyOutput("boxplot"))),
-                               tabBox(width = 6, title = strong("Mean Proportion", style = "color:black"), 
-                                      tabPanel("Histogram",
-                                               plotlyOutput("hist2"),
-                                               sliderInput("binwidth2", "# of Bins:",min = 0, max = 100, value = 50, width = "100%"),
-                                               chooseSliderSkin("Round", color = "#112446")),
-                                      tabPanel("Box Plot",
-                                               plotlyOutput("boxplot2"))))))),
+                fluidRow(column(width = 3,  style = "padding-left:+15px",
+                                
+                                # Quality Control
+                                box(
+                                  width = NULL, status = "info", solidHeader = TRUE,
+                                  title = strong("Quality Control", style = "color:white"),
+                                  textInput("kingdom", h4(strong("Kingdom")), value = "Bacteria"),
+                                  QC_KINGDOM_COMMENT,
+                                  tags$style(type = 'text/css', '#slider1 .irs-grid-text {font-size: 1px}'),
+                                  tags$style(type = 'text/css', '#slider2 .irs-grid-text {font-size: 1px}'),
+                                  
+                                  sliderInput("slider1", h4(strong("Library size")), 
+                                              min=0, max=10000, value = 3000, step = 1000),
+                                  QC_LIBRARY_SIZE_COMMENT1,
+                                  QC_LIBRARY_SIZE_COMMENT2,
+                                  
+                                  sliderInput("slider2", h4(strong("Mean proportion")), 
+                                              min = 0, max = 0.1, value = 0.002, step = 0.001,  post  = " %"),
+                                  QC_MEAN_PROP_COMMENT1,
+                                  QC_MEAN_PROP_COMMENT2,
+                                  
+                                  br(),
+                                  p(" ", style = "margin-bottom: -20px;"),
+                                  
+                                  h4(strong("Erroneous taxonomic names")),
+                                  textInput("rem.str", label = "Complete match", value = ""),
+                                  QC_TAXA_NAME_COMMENT1,
+                                  
+                                  textInput("part.rem.str", label = "Partial match", value = ""),
+                                  QC_TAXA_NAME_COMMENT2,
+                                  
+                                  actionButton("run", (strong("Run!")), class = "btn-info"), 
+                                  p(" ", style = "margin-bottom: +10px;"), 
+                                  p(strong("Attention:"),"You have to click this Run button to perform data transformation and further analyses.", style = "margin-bottom:-10px"), br()
+                                ),
+                                
+                                uiOutput("moreControls")
+                ),
+                
+                column(width = 9, style = "padding-left:+10px",
+                       
+                       box(
+                         width = NULL, status = "info", solidHeader = TRUE,
+                         fluidRow(width = 12,
+                                  status = "info", solidHeader = TRUE, 
+                                  valueBoxOutput("sample_Size", width = 3),
+                                  valueBoxOutput("OTUs_Size", width = 3),
+                                  valueBoxOutput("phyla", width = 3),
+                                  valueBoxOutput("classes", width = 3)),
+                         fluidRow(width = 12, 
+                                  status = "info", solidHeader = TRUE,
+                                  valueBoxOutput("orders", width = 3),
+                                  valueBoxOutput("families", width = 3),
+                                  valueBoxOutput("genera", width = 3),
+                                  valueBoxOutput("species", width = 3)),
+                         fluidRow(style = "position:relative",
+                                  tabBox(width = 6, title = strong("Library Size", style = "color:black"), 
+                                         tabPanel("Histogram",
+                                                  plotlyOutput("hist"),
+                                                  sliderInput("binwidth", "# of Bins:",
+                                                              min = 0, max = 100, value = 50, width = "100%"),
+                                                  chooseSliderSkin("Round", color = "#112446")),
+                                         tabPanel("Box Plot", 
+                                                  plotlyOutput("boxplot"))),
+                                  tabBox(width = 6, title = strong("Mean Proportion", style = "color:black"), 
+                                         tabPanel("Histogram",
+                                                  plotlyOutput("hist2"),
+                                                  sliderInput("binwidth2", "# of Bins:",
+                                                              min = 0, max = 100, value = 50, width = "100%"),
+                                                  chooseSliderSkin("Round", color = "#112446")),
+                                         tabPanel("Box Plot",
+                                                  plotlyOutput("boxplot2"))))
+                       ),
+                       
+                       shinyjs::hidden(
+                         shiny::div(id = "pcoa.area",
+                                    box(width = NULL, status = "info", solidHeader = TRUE,
+                                        title = strong("Batch Effect Correction", style = "color:white"),
+                                        plotOutput("batch.pcoa", height = 600))))))),
         
         ## Data Transformation -----
         tabItem(tabName = "dataTransform", br(),
@@ -505,7 +536,8 @@ server = function(input, output, session){
     })
   
   ## Reactive Variables -------
-  infile = reactiveValues(biom = NULL, qc_biom = NULL, rare_biom = NULL)
+  infile = reactiveValues(biom = NULL, qc_biom = NULL, rare_biom = NULL, na_omit_biom = NULL)
+  batch.infile = reactiveValues(batchid = NULL, bat_biom = NULL, qc_biom = NULL, rare_biom = NULL)
   chooseData = reactiveValues(sam.dat = NULL, mon.sin.rev.bin.con = NULL, prim_vars = NULL, alpha.div = NULL,
                               alpha.div.rare = NULL, alpha.div.qc = NULL, taxa.out = NULL, tax.tab = NULL)
   taxa.results = reactiveValues(bin.var = NULL, cov.var = NULL, id.var = NULL, taxa = NULL, taxa.bin.sum.out = NULL, con.var = NULL, taxa.con.sum.out = NULL, lib.size = NULL)
@@ -928,10 +960,11 @@ server = function(input, output, session){
       p(" ", style = "margin-bottom: +15px;"),
       prettyRadioButtons("dt_cla_covariate_yn",label = NULL, icon = icon("check"),
                          animation = "jelly", c("None", "Covariate(s)"), selected = "None", width = '70%'),
-      
+
       shinyjs::hidden(
         shiny::div(id = "dt_cla_covariate_list", style = "margin-left: 2%",
-                   prettyCheckboxGroup("dt_cla_covariate_options"," Please select covariate(s)",choices = colnames(chooseData$sam.dat)[!colnames(chooseData$sam.dat) == input$dt_cla_response], width = '70%')))
+                   prettyCheckboxGroup("dt_cla_covariate_options"," Please select covariate(s)",
+                                       choices = get.cov.col(chooseData$sam.dat)[!get.cov.col(chooseData$sam.dat) %in% c(input$dt_cla_response)], width = '70%')))
     )
   })
   
@@ -974,14 +1007,14 @@ server = function(input, output, session){
       shinyjs::show("dt_cla_covariate_list")
       shinyjs::hide("dt_cla_loss")
       shinyjs::show("dt_cla_cov_loss")
-    } 
+    }
     else if (input$dt_cla_covariate_yn == "None") {
       shinyjs::hide("dt_cla_covariate_list")
       shinyjs::show("dt_cla_loss")
       shinyjs::hide("dt_cla_cov_loss")
     }
   })
-  
+
   observe({
     toggleState("dt_cla_runButton", (input$dt_cla_covariate_yn == "None") | ((input$dt_cla_covariate_yn == "Covariate(s)") & (length(input$dt_cla_covariate_options) != 0)) | ((input$dt_cla_minsplit > 0) & (input$dt_cla_minbucket > 0)))
   })
@@ -1007,17 +1040,18 @@ server = function(input, output, session){
       p(" ", style = "margin-bottom: +15px;"),
       prettyRadioButtons("dt_reg_covariate_yn",label = NULL, icon = icon("check"),
                          animation = "jelly", c("None", "Covariate(s)"), selected = "None", width = '70%'),
-      
+
       shinyjs::hidden(
         shiny::div(id = "dt_reg_covariate_list", style = "margin-left: 2%",
-                   prettyCheckboxGroup("dt_reg_covariate_options"," Please select covariate(s)",choices = colnames(chooseData$sam.dat)[!colnames(chooseData$sam.dat) == input$dt_reg_response], width = '70%')))
+                   prettyCheckboxGroup("dt_reg_covariate_options"," Please select covariate(s)",
+                                       choices = get.cov.col(chooseData$sam.dat)[!get.cov.col(chooseData$sam.dat) %in% c(input$dt_reg_response)], width = '70%')))
     )
   })
   
   observeEvent(input$dt_reg_covariate_yn,{
     if (input$dt_reg_covariate_yn == "Covariate(s)") {
       shinyjs::show("dt_reg_covariate_list")
-    } 
+    }
     else if (input$dt_reg_covariate_yn == "None") {
       shinyjs::hide("dt_reg_covariate_list")
     }
@@ -1078,17 +1112,18 @@ server = function(input, output, session){
       p(" ", style = "margin-bottom: +15px;"),
       prettyRadioButtons("rf_cla_covariate_yn",label = NULL, icon = icon("check"),
                          animation = "jelly", c("None", "Covariate(s)"), selected = "None", width = '70%'),
-      
+
       shinyjs::hidden(
         shiny::div(id = "rf_cla_covariate_list", style = "margin-left: 2%",
-                   prettyCheckboxGroup("rf_cla_covariate_options"," Please select covariate(s)",choices = colnames(chooseData$sam.dat)[!colnames(chooseData$sam.dat) == input$rf_cla_response], width = '70%')))
+                   prettyCheckboxGroup("rf_cla_covariate_options"," Please select covariate(s)",
+                                       choices = get.cov.col(chooseData$sam.dat)[!get.cov.col(chooseData$sam.dat) %in% c(input$rf_cla_response)], width = '70%')))
     )
   })
-  
+
   observeEvent(input$rf_cla_covariate_yn,{
     if (input$rf_cla_covariate_yn == "Covariate(s)") {
       shinyjs::show("rf_cla_covariate_list")
-    } 
+    }
     else if (input$rf_cla_covariate_yn == "None") {
       shinyjs::hide("rf_cla_covariate_list")
     }
@@ -1130,13 +1165,13 @@ server = function(input, output, session){
     if (input$rf_cla_covariate_yn == "Covariate(s)") {
       shinyjs::hide("rf_cla_loss")
       shinyjs::show("rf_cla_cov_loss")
-    } 
+    }
     else if (input$rf_cla_covariate_yn == "None") {
       shinyjs::show("rf_cla_loss")
       shinyjs::hide("rf_cla_cov_loss")
     }
   })
-  
+
   observe({
     toggleState("rf_cla_runButton", (input$rf_cla_covariate_yn == "None") | ((input$rf_cla_covariate_yn == "Covariate(s)") & (length(input$rf_cla_covariate_options) != 0)))
   })
@@ -1162,17 +1197,18 @@ server = function(input, output, session){
       p(" ", style = "margin-bottom: +15px;"),
       prettyRadioButtons("rf_reg_covariate_yn",label = NULL, icon = icon("check"),
                          animation = "jelly", c("None", "Covariate(s)"), selected = "None", width = '70%'),
-      
+
       shinyjs::hidden(
         shiny::div(id = "rf_reg_covariate_list", style = "margin-left: 2%",
-                   prettyCheckboxGroup("rf_reg_covariate_options"," Please select covariate(s)",choices = colnames(chooseData$sam.dat)[!colnames(chooseData$sam.dat) == input$rf_reg_response], width = '70%')))
+                   prettyCheckboxGroup("rf_reg_covariate_options"," Please select covariate(s)",
+                                       choices = get.cov.col(chooseData$sam.dat)[!get.cov.col(chooseData$sam.dat) %in% c(input$rf_reg_response)], width = '70%')))
     )
   })
-  
+
   observeEvent(input$rf_reg_covariate_yn,{
     if (input$rf_reg_covariate_yn == "Covariate(s)") {
       shinyjs::show("rf_reg_covariate_list")
-    } 
+    }
     else if (input$rf_reg_covariate_yn == "None") {
       shinyjs::hide("rf_reg_covariate_list")
     }
@@ -1233,17 +1269,18 @@ server = function(input, output, session){
       p(" ", style = "margin-bottom: +15px;"),
       prettyRadioButtons("xgb_cla_covariate_yn",label = NULL, icon = icon("check"),
                          animation = "jelly", c("None", "Covariate(s)"), selected = "None", width = '70%'),
-      
+
       shinyjs::hidden(
         shiny::div(id = "xgb_cla_covariate_list", style = "margin-left: 2%",
-                   prettyCheckboxGroup("xgb_cla_covariate_options"," Please select covariate(s)",choices = colnames(chooseData$sam.dat)[!colnames(chooseData$sam.dat) == input$xgb_cla_response], width = '70%')))
+                   prettyCheckboxGroup("xgb_cla_covariate_options"," Please select covariate(s)",
+                                       choices = get.cov.col(chooseData$sam.dat)[!get.cov.col(chooseData$sam.dat) %in% c(input$xgb_cla_response)], width = '70%')))
     )
   })
-  
+
   observeEvent(input$xgb_cla_covariate_yn,{
     if (input$xgb_cla_covariate_yn == "Covariate(s)") {
       shinyjs::show("xgb_cla_covariate_list")
-    } 
+    }
     else if (input$xgb_cla_covariate_yn == "None") {
       shinyjs::hide("xgb_cla_covariate_list")
     }
@@ -1253,9 +1290,9 @@ server = function(input, output, session){
     tagList(
       prettyRadioButtons("xgb_cla_loss", label = h4(strong("Loss function", style = "color:black")), animation = "jelly",
                          c("AUC (Gain)", "Cross entropy (Default)", "Error rate"), selected = "Cross entropy (Default)", icon = icon("check"), width = '70%'),
-      
+
       prettyRadioButtons("xgb_cla_loss_cov", label = h4(strong("Loss function", style = "color:black")), animation = "jelly",c("Mean squared error (Default)"),
-                         selected = "Mean squared error (Default)", width = '70%'),
+                         selected = "Mean squared error (Default)", icon = icon("check"), width = '70%'),
       
       p(" ", style = "margin-top: 25px;"),
       h4(strong("# folds", style = "color:black")),
@@ -1301,7 +1338,7 @@ server = function(input, output, session){
       shinyjs::show("xgb_cla_loss")
     }
   })
-  
+
   observe({
     toggleState("xgb_cla_runButton", (input$xgb_cla_covariate_yn == "None") | ((input$xgb_cla_covariate_yn == "Covariate(s)") & (length(input$xgb_cla_covariate_options) != 0)))
   })
@@ -1327,17 +1364,18 @@ server = function(input, output, session){
       p(" ", style = "margin-bottom: +15px;"),
       prettyRadioButtons("xgb_reg_covariate_yn",label = NULL, icon = icon("check"),
                          animation = "jelly", c("None", "Covariate(s)"), selected = "None", width = '70%'),
-      
+
       shinyjs::hidden(
         shiny::div(id = "xgb_reg_covariate_list", style = "margin-left: 2%",
-                   prettyCheckboxGroup("xgb_reg_covariate_options"," Please select covariate(s)",choices = colnames(chooseData$sam.dat)[!colnames(chooseData$sam.dat) == input$xgb_reg_response], width = '70%')))
+                   prettyCheckboxGroup("xgb_reg_covariate_options"," Please select covariate(s)",
+                                       choices = get.cov.col(chooseData$sam.dat)[!get.cov.col(chooseData$sam.dat) %in% c(input$xgb_reg_response)], width = '70%')))
     )
   })
-  
+
   observeEvent(input$xgb_reg_covariate_yn,{
     if (input$xgb_reg_covariate_yn == "Covariate(s)") {
       shinyjs::show("xgb_reg_covariate_list")
-    } 
+    }
     else if (input$xgb_reg_covariate_yn == "None") {
       shinyjs::hide("xgb_reg_covariate_list")
     }
@@ -1348,7 +1386,7 @@ server = function(input, output, session){
       p(" ", style = "margin-top: 25px;"),
       h4(strong("Loss function", style = "color:black")),
       p(" ", style = "margin-bottom: +15px;"),
-      prettyRadioButtons("xgb_reg_loss", label = NULL, animation = "jelly",c("Mean squared error (Default)"),
+      prettyRadioButtons("xgb_reg_loss", label = NULL, icon = icon("check"), animation = "jelly",c("Mean squared error (Default)"),
                          selected = "Mean squared error (Default)", width = '70%'),
       
       p(" ", style = "margin-top: 25px;"),
@@ -1421,15 +1459,6 @@ server = function(input, output, session){
     }
   })
   
-  observeEvent(input$xgb_cla_loss_cov, {
-    if(input$xgb_cla_loss_cov == "Huber loss (Default)"){
-      xgb.model.input.cla$cov.loss = "huber"
-    }
-    else if(input$xgb_cla_loss_cov == "Mean squared error (Default)"){
-      xgb.model.input.cla$cov.loss = "rss"
-    }
-  })
-  
   observeEvent(input$xgb_reg_loss, {
     if(input$xgb_reg_loss == "Huber loss (Default)"){
       xgb.model.input.reg$loss = "huber"
@@ -1442,6 +1471,232 @@ server = function(input, output, session){
   ## Run Buttons ------
   ## (1) QC & Data Transformation -----
   observeEvent(input$run, {
+    # if(input$batch.yn == "Yes"){
+    #   withProgress(
+    #     message = 'Calculation in progress', 
+    #     detail = 'This may take a while...', value = 0, {
+    #       
+    #       incProgress(1/10, message = "Data Trimming in progress")
+    #       
+    #       if (nchar(input$part.rem.str) == 0) {
+    #         rem.tax.complete <- rem.tax.d
+    #         rem.tax.partial <- rem.tax.str.d
+    #       } else {
+    #         rem.tax.complete <- unique(c(unlist(strsplit(input$rem.str, split = ",")), rem.tax.d))
+    #         rem.tax.partial <- unique(c(unlist(strsplit(input$part.rem.str, split = ",")), rem.tax.str.d))
+    #       }
+    #       
+    #       tax.tab <- tax_table(infile$biom)
+    #       
+    #       if (input$kingdom != "all") {
+    #         ind <- is.element(tax.tab[,1], input$kingdom)
+    #         shiny::validate(
+    #           if (sum(ind) == 0) {
+    #             showNotification(h4(paste("Error: Please select valid Kingdom. Available kingdoms are:", 
+    #                                       paste(c(na.omit(unique(tax.tab[,1])) ,"and all"), collapse = ", "))),
+    #                              type = "error")
+    #           } else {
+    #             NULL
+    #           }
+    #         )
+    #       }
+    #       
+    #       shinyjs::disable("batch.yn")
+    #       shinyjs::disable("batch.var")
+    #       shinyjs::disable("prim.var")
+    #       shinyjs::disable("covar")
+    #       shinyjs::disable("lib.size.adj")
+    #       shinyjs::disable("run")
+    #       shinyjs::disable("slider1")
+    #       shinyjs::disable("slider2")
+    #       shinyjs::disable("kingdom")
+    #       shinyjs::disable("skip")
+    #       shinyjs::disable("binwidth")
+    #       shinyjs::disable("binwidth2")
+    #       shinyjs::disable("rem.str")
+    #       shinyjs::disable("part.rem.str")
+    #       
+    #       rcol$selected = "rgba(255, 0, 0, 0.6)"
+    #       
+    #       tree.exists <- !is.null(access(infile$biom, "phy_tree"))
+    #       
+    #       # 1. QC
+    #       infile$qc_biom = biom.clean(infile$biom, 
+    #                                   input$kingdom, 
+    #                                   lib.size.cut.off = input$slider1, 
+    #                                   mean.prop.cut.off = input$slider2/100,
+    #                                   rem.tax = rem.tax.complete, rem.tax.str = rem.tax.partial,
+    #                                   tree.exists = tree.exists)
+    #       
+    #       incProgress(2/10, message = "Batch effect correction in progress")
+    #       
+    #       # 2. Remove NA
+    #       otu.tab <- as.data.frame(t(otu_table(infile$qc_biom)))
+    #       sam.dat <- sample_data(infile$qc_biom)
+    #       
+    #       remain.samples <- sam.dat[,c(input$batch.var, input$prim.var, input$covar)] %>% na.omit %>% rownames
+    #       
+    #       infile$na_omit_biom <- prune_samples(remain.samples, infile$qc_biom)
+    #       otu.tab <- as.data.frame(t(otu_table(infile$na_omit_biom)))
+    #       tax.tab <- tax_table(infile$na_omit_biom)
+    #       tree <- phy_tree(infile$na_omit_biom)
+    #       sam.dat <- sample_data(infile$na_omit_biom)
+    #       
+    #       # 3. Check numeric / binary factor / multicategory factor
+    #       batchid <<- as.factor(sam.dat[[input$batch.var]])
+    #       
+    #       prim.var <- input$prim.var
+    #       if(!is.null(input$covar)){
+    #         cov <- input$covar
+    #         df <- data.frame(sam.dat[,prim.var], sam.dat[,cov])
+    #       }
+    #       else{
+    #         df <- data.frame(sam.dat[,prim.var])
+    #       }
+    #       
+    #       for(name in colnames(df)){
+    #         type <- col.str.check(sam.dat, name)
+    #         if(type == "factor"){
+    #           df[[name]] <- as.factor(df[[name]])
+    #         }
+    #         else if(type == "numeric"){
+    #           df[[name]] <- as.numeric(df[[name]])
+    #         }
+    #         else{
+    #           df[[name]] <- df[[name]]
+    #         }
+    #       }
+    #       
+    #       f1 <- as.formula(paste("~" ,paste(names(df), collapse = "+"), collapse = ""))
+    #       covar <- model.matrix(f1, data = df)[,-1]
+    #       
+    #       # covar <- model.matrix(~ as.factor(sam.dat[[input$prim.var]]) + as.factor(sam.dat[[input$covar]]))[,-1]
+    #       ref.bat <- names(which.max(table(batchid)))
+    #       
+    #       if(input$lib.size.adj == "No"){
+    #         set.seed(578)
+    #         conqur.otu.tab <- ConQuR(tax_tab = otu.tab, batchid = batchid,
+    #                                  covariates = covar, batch_ref = ref.bat,
+    #                                  logistic_lasso = T, quantile_type = "lasso", interplt = T, num_core = 2)
+    #       }
+    #       else{ # input$lib.size.adj == "Yes"
+    #         set.seed(578)
+    #         conqur.otu.tab <- ConQuR_libsize(tax_tab = otu.tab, batchid = batchid,
+    #                                          covariates = covar, batch_ref = ref.bat, libsize_tune = NULL,
+    #                                          logistic_lasso = T, quantile_type = "lasso", interplt = T, num_core = 2)
+    #       }
+    #       
+    #       bat.otu.tab <- otu_table(t(as.data.frame(as.matrix(conqur.otu.tab))), taxa_are_rows = TRUE)
+    #       bat.sam.dat <- sample_data(infile$na_omit_biom)
+    #       bat.tax.tab <- tax_table(infile$na_omit_biom)
+    #       bat.tree <- phy_tree(infile$na_omit_biom)
+    #       
+    #       batch.infile$bat_biom <- merge_phyloseq(bat.otu.tab, bat.tax.tab, bat.sam.dat, bat.tree)
+    #       
+    #       # 4. Rarefying
+    #       incProgress(2/10, message = "Rarefying in progress")
+    #       
+    #       # Rarefying original biom data
+    #       lib_size.sum = lib.size.func(infile$qc_biom)$lib.size.sum
+    #       infile$rare_biom = rarefy.func(infile$qc_biom, 
+    #                                      cut.off = lib_size.sum["Minimum"],
+    #                                      multi.rarefy = 1,
+    #                                      tree.exists = tree.exists)
+    #       
+    #       # Rarefying corrected biom data
+    #       batch.infile$qc_biom <- otu.tab.clean(batch.infile$bat_biom,
+    #                                             lib.size.cut.off = input$slider1,
+    #                                             mean.prop.cut.off = input$slider2/100,
+    #                                             tree.exists = tree.exists)
+    #       
+    #       lib_size.sum = lib.size.func(batch.infile$qc_biom)$lib.size.sum
+    #       batch.infile$rare_biom <- rarefy.func(batch.infile$qc_biom,
+    #                                             cut.off = lib_size.sum["Minimum"],
+    #                                             multi.rarefy = 1,
+    #                                             tree.exists = tree.exists)
+    #       
+    #       # 5. PCoA Plot code
+    #       qc.biom <- infile$qc_biom
+    #       rare.biom <- infile$rare_biom
+    #       qc.biom.bat <- batch.infile$qc_biom
+    #       rare.biom.bat <- batch.infile$rare_biom
+    #       
+    #       shinyjs::show("pcoa.area")
+    #       
+    #       incProgress(2/10, message = "Plotting PCoA in progress")
+    #       output$batch.pcoa <- renderPlot({
+    #         try(batch.correct.PCoA(qc.biom = qc.biom, rare.biom = rare.biom,
+    #                                qc.biom.bat = qc.biom.bat, rare.biom.bat = rare.biom.bat,
+    #                                batch.var = input$batch.var), silent = TRUE)
+    #       })
+    #       
+    #       incProgress(2/10, message = "Saving File in progress")
+    #       
+    #       chooseData$sam.dat = sample_data(batch.infile$qc_biom)
+    #       chooseData$mon.sin.rev.bin.con = is.mon.sin.rev.bin.con(chooseData$sam.dat)
+    #       chooseData$prim_vars = pri.func(chooseData$sam.dat, chooseData$mon.sin.rev.bin.con)
+    #       chooseData$tax.tab = tax_table(batch.infile$rare_biom)
+    #       
+    #       output$moreControls <- renderUI({
+    #         tagList(
+    #           box(title = strong("Download Data", style = "color:white"), width = NULL, status = "info", solidHeader = TRUE,
+    #               span(textOutput("text"), style="font-size:13pt"),
+    #               
+    #               h5("Data after Quality Control and Batch Effect Correction"),
+    #               downloadButton("downloadData2", "Download", width = '50%', 
+    #                              style = "color:black; background-color: red3"),br(),
+    #               
+    #               h5("Data after Quality Control, Batch Effect Correction and Rarefaction"),
+    #               downloadButton("downloadData3", "Download", width = '50%', 
+    #                              style = "color:black; background-color: red3"),br(),
+    #               
+    #               p("For your reference, you can download the data files above for 
+    #               (1) the phyloseq object (biom.after.qc.bat) after QC and batch effect correction, and 
+    #               (2) the phyloseq object (rare.biom.after.qc.bat) after QC, batch effect correction, and rarefaction.", 
+    #                 style = "font-size:11pt")))
+    #       })
+    #       
+    #       output$text <- renderText({"You are all set! You can proceed to data analysis!"})
+    #       
+    #       biom.after.qc.bat = batch.infile$qc_biom
+    #       output$downloadData2 <- downloadHandler(
+    #         filename = function() {
+    #           paste("biom.after.qc.bat.Rdata")
+    #         },
+    #         content = function(file1) {
+    #           save(biom.after.qc.bat, file = file1)
+    #         })
+    #       
+    #       rare.biom.after.qc.bat = batch.infile$rare_biom
+    #       output$downloadData3 <- downloadHandler(
+    #         filename = function() {
+    #           paste("rare.biom.after.qc.bat.Rdata")
+    #         },
+    #         content = function(file1) {
+    #           save(rare.biom.after.qc.bat, file = file1)
+    #         })
+    #       
+    #       incProgress(1/10, message = "Done")
+    #       shinyjs::enable("batch.yn")
+    #       shinyjs::enable("batch.var")
+    #       shinyjs::enable("prim.var")
+    #       shinyjs::enable("covar")
+    #       shinyjs::enable("lib.size.adj")
+    #       shinyjs::enable("run")
+    #       shinyjs::enable("slider1")
+    #       shinyjs::enable("slider2")
+    #       shinyjs::enable("kingdom")
+    #       shinyjs::enable("skip")
+    #       shinyjs::enable("binwidth")
+    #       shinyjs::enable("binwidth2")
+    #       shinyjs::enable("rem.str")
+    #       shinyjs::enable("part.rem.str")
+    #       
+    #       infile$qc_biom <- batch.infile$qc_biom
+    #       infile$rare_biom <- batch.infile$rare_biom
+    #     })
+    # }
+    
     withProgress(
       message = 'Calculation in progress', 
       detail = 'This may take a while...', value = 0, {
@@ -1471,6 +1726,11 @@ server = function(input, output, session){
           )
         }
         
+        shinyjs::disable("batch.yn")
+        shinyjs::disable("batch.var")
+        shinyjs::disable("prim.var")
+        shinyjs::disable("covar")
+        shinyjs::disable("lib.size.adj")
         shinyjs::disable("run")
         shinyjs::disable("slider1")
         shinyjs::disable("slider2")
@@ -1499,14 +1759,14 @@ server = function(input, output, session){
                                        multi.rarefy = 1,
                                        tree.exists = tree.exists)
         
+        shinyjs::hide("pcoa.area")
+        
         incProgress(2/10, message = "Saving File in progress")
         
         chooseData$sam.dat = sample_data(infile$qc_biom)
         chooseData$mon.sin.rev.bin.con = is.mon.sin.rev.bin.con(chooseData$sam.dat)
         chooseData$prim_vars = pri.func(chooseData$sam.dat, chooseData$mon.sin.rev.bin.con)
         chooseData$tax.tab = tax_table(infile$rare_biom)
-        
-        #library.size <- library.size[names(library.size) %in% rownames(rare.sam.dat)]
         
         output$moreControls <- renderUI({
           tagList(
@@ -1517,7 +1777,7 @@ server = function(input, output, session){
                 h5("Data after Quality Control and Rarefaction"),
                 downloadButton("downloadData3", "Download", width = '50%', style = "color:black; background-color: red3"),br(),
                 p("For your reference, you can download the data files above for the phyloseq object (biom.after.qc) after QC and
-                      (rare.biom.after.qc) after QC and rarefaction.",
+                    (rare.biom.after.qc) after QC and rarefaction.",
                   style = "font-size:11pt")
             )
           )
@@ -1525,25 +1785,30 @@ server = function(input, output, session){
         
         output$text <- renderText({"You are all set! You can proceed to data analysis!"})
         
-        qc_biom = infile$qc_biom
+        biom.after.qc = infile$qc_biom
         output$downloadData2 <- downloadHandler(
           filename = function() {
             paste("biom.after.qc.Rdata")
           },
           content = function(file1) {
-            save(qc_biom, file = file1)
+            save(biom.after.qc, file = file1)
           })
         
-        rare_biom = infile$rare_biom
+        rare.biom.after.qc = infile$rare_biom
         output$downloadData3 <- downloadHandler(
           filename = function() {
             paste("rare.biom.after.qc.Rdata")
           },
           content = function(file1) {
-            save(rare_biom, file = file1)
+            save(rare.biom.after.qc, file = file1)
           })
         
         incProgress(1/10, message = "Done")
+        shinyjs::enable("batch.yn")
+        shinyjs::enable("batch.var")
+        shinyjs::enable("prim.var")
+        shinyjs::enable("covar")
+        shinyjs::enable("lib.size.adj")
         shinyjs::enable("run")
         shinyjs::enable("slider1")
         shinyjs::enable("slider2")
@@ -1554,6 +1819,7 @@ server = function(input, output, session){
         shinyjs::enable("rem.str")
         shinyjs::enable("part.rem.str")
       })
+    
   })
   
   observeEvent(input$datTransRun, {
@@ -1816,14 +2082,14 @@ server = function(input, output, session){
                                           minbucket = as.numeric(input$dt_cla_minbucket),
                                           nfold = nfold,
                                           name = name,
-                                          p = 1),
+                                          p = 0.8),
                                    silent = TRUE)
           }
         }
         else{
-          input.data <- remove.na(data = data, sam.dat = chooseData$sam.dat, y.name = input$dt_cla_response, level.names = level.names)
-          data <- input.data[[1]]
-          sam.dat.na <- input.data[[2]]
+          input.data <- try(remove.na(data = data, sam.dat = chooseData$sam.dat, y.name = input$dt_cla_response, level.names = level.names), silent = TRUE)
+          data <- try(input.data[[1]], silent = TRUE)
+          sam.dat.na <- try(input.data[[2]], silent = TRUE)
           y.name <- input$dt_cla_response
           nfold <- ifelse(input$dt_cla_nfold == "LOOCV (Default)", lib.size.func(infile$qc_biom)$num.sams, as.numeric(input$dt_cla_nfold))
           
@@ -1839,7 +2105,7 @@ server = function(input, output, session){
                                           minbucket = as.numeric(input$dt_cla_minbucket),
                                           nfold = nfold,
                                           name = name,
-                                          p = 1),
+                                          p = 0.8),
                                    silent = TRUE)
           }
         }
@@ -1868,8 +2134,10 @@ server = function(input, output, session){
                                             dataTableOutput(paste0("dt_cla_column_table", i), height = "auto", width = 600), br(), br(),
                                             dataTableOutput(paste0("dt_cla_summary_table", i), height = 400, width = 900),
                                             p(" ", style = "margin-bottom: -175px;")),
-                                   tabPanel(title = "Error Plot", align = "center", br(),
-                                            plotOutput(paste0("dt_cla_tuned_plot", i), height = 600, width = 500))))})),
+                                   tabPanel(title = "CV Error", align = "center", br(),
+                                            plotOutput(paste0("dt_cla_tuned_plot", i), height = 600, width = 500)),
+                                   tabPanel(title = "Test Error", align = "left", br(),
+                                            uiOutput(paste0("dt_cla_test_error", i)))))})),
             uiOutput("dt_cla_chatgpt_ui")
           )
         })
@@ -1916,6 +2184,32 @@ server = function(input, output, session){
               return(NULL)
             })
           })
+          
+          if(cov == "Covariate(s)"){
+            output[[paste0("dt_cla_test_error", j)]] <- renderUI({
+              tagList(
+                p(strong("Test Results", style = "color:black; font-size:13pt")),
+                tags$ul(
+                  tags$li(p(paste("Test MSE:", try(get.mse(predict(dt.list[[level.names[j]]]$final.model, dt.list[[level.names[j]]]$test$x), dt.list[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt")),
+                  tags$li(p(paste("Test MAE:", try(get.mae(predict(dt.list[[level.names[j]]]$final.model, dt.list[[level.names[j]]]$test$x), dt.list[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt"))
+                  , style = "font-size:12pt"),
+                p("", style = "margin-bottom: 15pt")
+              )
+            })
+          }
+          else{
+            output[[paste0("dt_cla_test_error", j)]] <- renderUI({
+              tagList(
+                p(strong("Test Results", style = "color:black; font-size:13pt")),
+                tags$ul(
+                  tags$li(p(paste("Test Misclassification Error:", try(1-get.acc(predict(dt.list[[level.names[j]]]$final.model, dt.list[[level.names[j]]]$test$x), dt.list[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt")),
+                  tags$li(p(paste("Test AUC:", try(get.auc(predict(dt.list[[level.names[j]]]$final.model, dt.list[[level.names[j]]]$test$x, type = "prob")[,2], dt.list[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt")),
+                  tags$li(p(paste("Test Cross Entropy:", try(get.ce(predict(dt.list[[level.names[j]]]$final.model, dt.list[[level.names[j]]]$test$x, type = "prob"), dt.list[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt"))
+                  , style = "font-size:12pt"),
+                p("", style = "margin-bottom: 15pt")
+              )
+            })
+          }
           
           output$dt_cla_downloadTabUI <- renderUI({
             tagList(
@@ -2100,6 +2394,12 @@ server = function(input, output, session){
         var.name <- input$dt_cla_response_var_rename
         api.key <- input$dt_cla_chatgpt_key
         
+        new.taxa.name <- gsub("[[:punct:]]", "+", taxa.name)
+        new.taxa.name <- gsub(" ", "+", new.taxa.name)
+        
+        new.var.name <- gsub("[[:punct:]]", "+", var.name)
+        new.var.name <- gsub(" ", "+", new.var.name)
+        
         chat_result <- tryCatch(chat_gpt_MiTree(taxa.name, var.name, api.key), error = function(e){
           message("Invalid or incorrect API key. Please check it again.")
           showModal(modalDialog(div("Invalid or incorrect API key. Please check it again.")))
@@ -2108,7 +2408,16 @@ server = function(input, output, session){
         
         if(!is.null(chat_result)){
           output$dt_cla_chatgpt_vis <-renderUI({
-            tagList(br(), strong(paste("Tell me about the roles of a", taxa.name, "on a", var.name)), br(), br(), p(chat_result))
+            tagList(br(), strong(paste("Tell me about the roles of a", taxa.name, "on a", var.name)), 
+                    p(chat_result, style = "margin-top: 10px"), br(),
+                    
+                    strong("Reference Search Results"), br(), 
+                    
+                    p("Google Scholar", style = "margin-top: 10px"), 
+                    p(tags$a(href = paste0("https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=", new.taxa.name, "+", new.var.name,"&btnG="), paste0("https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=", new.taxa.name, "+", new.var.name,"&btnG="), target = "_blank")), 
+                    
+                    p("PubMed"), 
+                    p(tags$a(href = paste0("https://pubmed.ncbi.nlm.nih.gov/?term=", new.taxa.name, "+", new.var.name), paste0("https://pubmed.ncbi.nlm.nih.gov/?term=", new.taxa.name, "+", new.var.name), target = "_blank")))
           })
         }
         
@@ -2185,16 +2494,16 @@ server = function(input, output, session){
           input.data <- try(cov.remove.na(data = data, sam.dat = chooseData$sam.dat, y.name = input$dt_reg_response, cov.name = input$dt_reg_covariate_options, level.names = level.names), silent = TRUE)
           data <- try(input.data[[1]], silent = TRUE)
           sam.dat.na <- try(input.data[[2]], silent = TRUE)
-                    
+          
           y.name <- input$dt_reg_response
           sam.dat.na <- check.column.class(sam.dat.na)
           sam.dat.na <- try(cov.linear.reg(sam.dat.na, y.name), silent = TRUE)
           y.name <- "resid"
         }
         else{
-          input.data <- remove.na(data = data, sam.dat = chooseData$sam.dat, y.name = input$dt_reg_response, level.names = level.names)
-          data <- input.data[[1]]
-          sam.dat.na <- input.data[[2]]
+          input.data <- try(remove.na(data = data, sam.dat = chooseData$sam.dat, y.name = input$dt_reg_response, level.names = level.names), silent = TRUE)
+          data <- try(input.data[[1]], silent = TRUE)
+          sam.dat.na <- try(input.data[[2]], silent = TRUE)
           y.name <- input$dt_reg_response
         }
         nfold <- ifelse(input$dt_reg_nfold == "LOOCV (Default)", lib.size.func(infile$qc_biom)$num.sams, as.numeric(input$dt_reg_nfold))
@@ -2210,13 +2519,14 @@ server = function(input, output, session){
                                     minbucket = as.numeric(input$dt_reg_minbucket),
                                     nfold = nfold,
                                     name = name,
-                                    p = 1),
+                                    p = 0.8),
                              silent = TRUE)
         }
         
         dt.summary.table.list <- list()
         dt.var.used.table.list <- list()
         dt.plot.cp.list <- list()
+        dt.test.error.reg <- list()
         
         for(name in level.names){
           dt.summary.table.list[[name]] <- try(dt.summary.table(fit, name, type = "reg", y.var = sam.dat.na[[y.name]]), silent = TRUE)
@@ -2233,8 +2543,10 @@ server = function(input, output, session){
                                             dataTableOutput(paste0("dt_reg_column_table", i), height = "auto", width = 600), br(), br(),
                                             dataTableOutput(paste0("dt_reg_summary_table", i), height = 400, width = 900),
                                             p(" ", style = "margin-bottom: -175px;")),
-                                   tabPanel(title = "Error Plot", align = "center", br(),
-                                            plotOutput(paste0("dt_reg_tuned_plot", i), height = 600, width = 500))))})),
+                                   tabPanel(title = "CV Error", align = "center", br(),
+                                            plotOutput(paste0("dt_reg_tuned_plot", i), height = 600, width = 500)),
+                                   tabPanel(title = "Test Error", align = "left", br(),
+                                            uiOutput(paste0("dt_reg_test_error", i)))))})),
             uiOutput("dt_reg_chatgpt_ui")
           )
         })
@@ -2270,6 +2582,16 @@ server = function(input, output, session){
               showModal(modalDialog(div("Visualization not available! Check the input.")))
               return(NULL)
             })
+          })
+          
+          output[[paste0("dt_reg_test_error", j)]] <- renderUI({
+            tagList(
+              p(strong("Test Results", style = "color:black; font-size:13pt")),
+              tags$ul(
+                tags$li(p(paste("Test MSE:", try(get.mse(predict(fit[[level.names[j]]]$final.model, fit[[level.names[j]]]$test$x), fit[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt")),
+                tags$li(p(paste("Test MAE:", try(get.mae(predict(fit[[level.names[j]]]$final.model, fit[[level.names[j]]]$test$x), fit[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt"))
+                , style = "font-size:12pt")
+            )
           })
           
           output$dt_reg_downloadTabUI <- renderUI({
@@ -2455,6 +2777,12 @@ server = function(input, output, session){
         var.name <- input$dt_reg_response_var_rename
         api.key <- input$dt_reg_chatgpt_key
         
+        new.taxa.name <- gsub("[[:punct:]]", "+", taxa.name)
+        new.taxa.name <- gsub(" ", "+", new.taxa.name)
+        
+        new.var.name <- gsub("[[:punct:]]", "+", var.name)
+        new.var.name <- gsub(" ", "+", new.var.name)
+        
         chat_result <- tryCatch(chat_gpt_MiTree(taxa.name, var.name, api.key), error = function(e){
           message("Invalid or incorrect API key. Please check it again.")
           showModal(modalDialog(div("Invalid or incorrect API key. Please check it again.")))
@@ -2463,7 +2791,16 @@ server = function(input, output, session){
         
         if(!is.null(chat_result)){
           output$dt_reg_chatgpt_vis <-renderUI({
-            tagList(br(), strong(paste("Tell me about the roles of a", taxa.name, "on a", var.name)), br(), p(chat_result))
+            tagList(br(), strong(paste("Tell me about the roles of a", taxa.name, "on a", var.name)), 
+                    p(chat_result, style = "margin-top: 10px"), br(),
+                    
+                    strong("Reference Search Results"), br(), 
+                    
+                    p("Google Scholar", style = "margin-top: 10px"), 
+                    p(tags$a(href = paste0("https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=", new.taxa.name, "+", new.var.name,"&btnG="), paste0("https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=", new.taxa.name, "+", new.var.name,"&btnG="), target = "_blank")), 
+                    
+                    p("PubMed"), 
+                    p(tags$a(href = paste0("https://pubmed.ncbi.nlm.nih.gov/?term=", new.taxa.name, "+", new.var.name), paste0("https://pubmed.ncbi.nlm.nih.gov/?term=", new.taxa.name, "+", new.var.name), target = "_blank")))
           })
         }
         
@@ -2543,7 +2880,7 @@ server = function(input, output, session){
           y.name <- input$rf_cla_response
           nfold <- as.numeric(input$rf_cla_nfold)
           ntree <- as.numeric(input$rf_cla_ntree)
-
+          
           sam.dat.na <- check.column.class(sam.dat.na)
           sam.dat.na <- try(cov.logistic.reg(sam.dat.na, y.name), silent = TRUE)
           y.name <- "resid"
@@ -2558,14 +2895,14 @@ server = function(input, output, session){
                                               nfold = nfold,
                                               ntree = ntree,
                                               name = name,
-                                              p = 1), 
+                                              p = 0.8), 
                                    silent = TRUE)
           }
         }
         else{
-          input.data <- remove.na(data = data, sam.dat = chooseData$sam.dat, y.name = input$rf_cla_response, level.names = level.names)
-          data <- input.data[[1]]
-          sam.dat.na <- input.data[[2]]
+          input.data <- try(remove.na(data = data, sam.dat = chooseData$sam.dat, y.name = input$rf_cla_response, level.names = level.names), silent = TRUE)
+          data <- try(input.data[[1]], silent = TRUE)
+          sam.dat.na <- try(input.data[[2]], silent = TRUE)
           
           y.name <- input$rf_cla_response
           nfold <- as.numeric(input$rf_cla_nfold)
@@ -2582,7 +2919,7 @@ server = function(input, output, session){
                                               ntree = ntree,
                                               stratified = TRUE,
                                               name = name,
-                                              p = 1), 
+                                              p = 0.8), 
                                    silent = TRUE)
           }
         }
@@ -2596,11 +2933,12 @@ server = function(input, output, session){
         for(name in level.names){
           if(input$rf_cla_covariate_yn == "Covariate(s)"){
             rf.imp.plot.list[[name]] <- try(rf.imp.plot(rf.list, name, n = as.numeric(input$rf_cla_var_num), type = 1, is.cat = is.cat, colnames.list = colnames.list.cla, data = data, data.type = type), silent = TRUE)
+            pd.plot.list[[name]] <- try(rf.pdp.reg(rf.list, n = as.numeric(input$rf_cla_var_num), name = name, data.type = type), silent = TRUE)
           }
           else{
             rf.imp.plot.list[[name]] <- try(rf.imp.plot(rf.list, name, n = as.numeric(input$rf_cla_var_num), type = 2, is.cat = is.cat, colnames.list = colnames.list.cla, data = data, data.type = type), silent = TRUE)
+            pd.plot.list[[name]] <- try(rf.pdp.bin(rf.list, n = as.numeric(input$rf_cla_var_num), name = name, data.type = type), silent = TRUE)
           }
-          pd.plot.list[[name]] <- try(rf.pd.plot(rf.list, name, facet = NULL, is.cat = is.cat, n = as.numeric(input$rf_cla_var_num), data.type = type), silent = TRUE)
         }
         
         rf.width.list <- list()
@@ -2633,7 +2971,9 @@ server = function(input, output, session){
                                    tabPanel(title = "CV Error", align = "center", br(),
                                             plotOutput(paste0("rf_cla_cv", i), height = 700, width = 700)),
                                    tabPanel(title = "OOB Error", align = "center", br(),
-                                            plotOutput(paste0("rf_cla_oob", i), height = 700, width = 700))))})),
+                                            plotOutput(paste0("rf_cla_oob", i), height = 700, width = 700)),
+                                   tabPanel(title = "Test Error", align = "left", br(),
+                                            uiOutput(paste0("rf_cla_test_error", i)))))})),
             uiOutput("rf_cla_chatgpt_ui")
           )
         })
@@ -2678,6 +3018,32 @@ server = function(input, output, session){
               return(NULL)
             })
           })
+          
+          if(input$rf_cla_covariate_yn == "Covariate(s)"){
+            output[[paste0("rf_cla_test_error", j)]] <- renderUI({
+              tagList(
+                p(strong("Test Results", style = "color:black; font-size:13pt")),
+                tags$ul(
+                  tags$li(p(paste("Test MSE:", try(get.mse(predict(rf.list[[level.names[j]]]$fit, rf.list[[level.names[j]]]$test$x), rf.list[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt")),
+                  tags$li(p(paste("Test MAE:", try(get.mae(predict(rf.list[[level.names[j]]]$fit, rf.list[[level.names[j]]]$test$x), rf.list[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt"))
+                  , style = "font-size:12pt"),
+                p("", style = "margin-bottom: 15pt")
+              )
+            })
+          }
+          else{
+            output[[paste0("rf_cla_test_error", j)]] <- renderUI({
+              tagList(
+                p(strong("Test Results", style = "color:black; font-size:13pt")),
+                tags$ul(
+                  tags$li(p(paste("Test Misclassification Error:", try(1-get.acc(predict(rf.list[[level.names[j]]]$fit, rf.list[[level.names[j]]]$test$x), rf.list[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt")),
+                  tags$li(p(paste("Test AUC:", try(get.auc(predict(rf.list[[level.names[j]]]$fit, rf.list[[level.names[j]]]$test$x, type = "prob")[,2], rf.list[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt")),
+                  tags$li(p(paste("Test Cross Entropy:", try(get.ce(predict(rf.list[[level.names[j]]]$fit, rf.list[[level.names[j]]]$test$x, type = "prob"), rf.list[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt"))
+                  , style = "font-size:12pt"),
+                p("", style = "margin-bottom: 15pt")
+              )
+            })
+          }
           
           output$rf_cla_downloadTabUI <- renderUI({
             tagList(
@@ -2815,6 +3181,12 @@ server = function(input, output, session){
         var.name <- input$rf_cla_response_var_rename
         api.key <- input$rf_cla_chatgpt_key
         
+        new.taxa.name <- gsub("[[:punct:]]", "+", taxa.name)
+        new.taxa.name <- gsub(" ", "+", new.taxa.name)
+        
+        new.var.name <- gsub("[[:punct:]]", "+", var.name)
+        new.var.name <- gsub(" ", "+", new.var.name)
+        
         chat_result <- tryCatch(chat_gpt_MiTree(taxa.name, var.name, api.key), error = function(e){
           message("Invalid or incorrect API key. Please check it again.")
           showModal(modalDialog(div("Invalid or incorrect API key. Please check it again.")))
@@ -2823,7 +3195,16 @@ server = function(input, output, session){
         
         if(!is.null(chat_result)){
           output$rf_cla_chatgpt_vis <-renderUI({
-            tagList(br(), strong(paste("Tell me about the roles of a", taxa.name, "on a", var.name)), br(), br(), p(chat_result))
+            tagList(br(), strong(paste("Tell me about the roles of a", taxa.name, "on a", var.name)), 
+                    p(chat_result, style = "margin-top: 10px"), br(),
+                    
+                    strong("Reference Search Results"), br(), 
+                    
+                    p("Google Scholar", style = "margin-top: 10px"), 
+                    p(tags$a(href = paste0("https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=", new.taxa.name, "+", new.var.name,"&btnG="), paste0("https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=", new.taxa.name, "+", new.var.name,"&btnG="), target = "_blank")), 
+                    
+                    p("PubMed"), 
+                    p(tags$a(href = paste0("https://pubmed.ncbi.nlm.nih.gov/?term=", new.taxa.name, "+", new.var.name), paste0("https://pubmed.ncbi.nlm.nih.gov/?term=", new.taxa.name, "+", new.var.name), target = "_blank")))
           })
         }
       }
@@ -2899,16 +3280,16 @@ server = function(input, output, session){
           input.data <- try(cov.remove.na(data = data, sam.dat = chooseData$sam.dat, y.name = input$rf_reg_response, cov.name = input$rf_reg_covariate_options, level.names = level.names), silent = TRUE)
           data <- try(input.data[[1]], silent = TRUE)
           sam.dat.na <- try(input.data[[2]], silent = TRUE)
-                    
+          
           y.name <- input$rf_reg_response
           sam.dat.na <- check.column.class(sam.dat.na)
           sam.dat.na <- try(cov.linear.reg(sam.dat.na, y.name), silent = TRUE)
           y.name <- "resid"
         }
         else{
-          input.data <- remove.na(data = data, sam.dat = chooseData$sam.dat, y.name = input$rf_reg_response, level.names = level.names)
-          data <- input.data[[1]]
-          sam.dat.na <- input.data[[2]]
+          input.data <- try(remove.na(data = data, sam.dat = chooseData$sam.dat, y.name = input$rf_reg_response, level.names = level.names), silent = TRUE)
+          data <- try(input.data[[1]], silent = TRUE)
+          sam.dat.na <- try(input.data[[2]], silent = TRUE)
           y.name <- input$rf_reg_response
         }
         
@@ -2925,16 +3306,17 @@ server = function(input, output, session){
                                                 nfold = nfold,
                                                 ntree = ntree,
                                                 name = name,
-                                                p = 1),
+                                                p = 0.8),
                                      silent = TRUE)
         }
         incProgress(2/10, message = "Visualizations in progress")
         
         rf.imp.plot.list.reg <- list()
         pd.plot.list.reg <- list()
+        rf.test.error.reg <- list()
         for(name in level.names){
           rf.imp.plot.list.reg[[name]] <- try(rf.imp.plot(rf.list.reg, name, n = as.numeric(input$rf_reg_var_num), type = 1, is.cat = FALSE, colnames.list = colnames.list.reg, data = data, data.type = type), silent = TRUE)
-          pd.plot.list.reg[[name]] <- try(rf.pd.plot(rf.list.reg, name, facet = NULL, is.cat = FALSE, n = as.numeric(input$rf_reg_var_num), data.type = type), silent = TRUE)
+          pd.plot.list.reg[[name]] <- try(rf.pdp.reg(rf.list.reg, n = as.numeric(input$rf_reg_var_num), name = name, data.type = type), silent = TRUE)
         }
         
         rf.width.list.reg <- list()
@@ -2967,7 +3349,9 @@ server = function(input, output, session){
                                    tabPanel(title = "CV Error", align = "center", br(),
                                             plotOutput(paste0("rf_reg_cv", i), height = 700, width = 700)),
                                    tabPanel(title = "OOB Error", align = "center", br(),
-                                            plotOutput(paste0("rf_reg_oob", i), height = 700, width = 700))))})),
+                                            plotOutput(paste0("rf_reg_oob", i), height = 700, width = 700)),
+                                   tabPanel(title = "Test Error", align = "left", br(),
+                                            uiOutput(paste0("rf_reg_test_error", i)))))})),
             uiOutput("rf_reg_chatgpt_ui")
           )
         })
@@ -3011,6 +3395,16 @@ server = function(input, output, session){
               showModal(modalDialog(div("Visualization not available! Check the input.")))
               return(NULL)
             })
+          })
+          print(rf.list.reg[[level.names[j]]]$test$y)
+          output[[paste0("rf_reg_test_error", j)]] <- renderUI({
+            tagList(
+              p(strong("Test Results", style = "color:black; font-size:13pt")),
+              tags$ul(
+                tags$li(p(paste("Test MSE:", try(get.mse(predict(rf.list.reg[[level.names[j]]]$fit, rf.list.reg[[level.names[j]]]$test$x), rf.list.reg[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt")),
+                tags$li(p(paste("Test MAE:", try(get.mae(predict(rf.list.reg[[level.names[j]]]$fit, rf.list.reg[[level.names[j]]]$test$x), rf.list.reg[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt"))
+                , style = "font-size:12pt")
+            )
           })
           
           output$rf_reg_downloadTabUI <- renderUI({
@@ -3148,6 +3542,12 @@ server = function(input, output, session){
         var.name <- input$rf_reg_response_var_rename
         api.key <- input$rf_reg_chatgpt_key
         
+        new.taxa.name <- gsub("[[:punct:]]", "+", taxa.name)
+        new.taxa.name <- gsub(" ", "+", new.taxa.name)
+        
+        new.var.name <- gsub("[[:punct:]]", "+", var.name)
+        new.var.name <- gsub(" ", "+", new.var.name)
+        
         chat_result <- tryCatch(chat_gpt_MiTree(taxa.name, var.name, api.key), error = function(e){
           message("Invalid or incorrect API key. Please check it again.")
           showModal(modalDialog(div("Invalid or incorrect API key. Please check it again.")))
@@ -3156,7 +3556,16 @@ server = function(input, output, session){
         
         if(!is.null(chat_result)){
           output$rf_reg_chatgpt_vis <-renderUI({
-            tagList(br(), strong(paste("Tell me about the roles of a", taxa.name, "on a", var.name)), br(), p(chat_result))
+            tagList(br(), strong(paste("Tell me about the roles of a", taxa.name, "on a", var.name)), 
+                    p(chat_result, style = "margin-top: 10px"), br(),
+                    
+                    strong("Reference Search Results"), br(), 
+                    
+                    p("Google Scholar", style = "margin-top: 10px"), 
+                    p(tags$a(href = paste0("https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=", new.taxa.name, "+", new.var.name,"&btnG="), paste0("https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=", new.taxa.name, "+", new.var.name,"&btnG="), target = "_blank")), 
+                    
+                    p("PubMed"), 
+                    p(tags$a(href = paste0("https://pubmed.ncbi.nlm.nih.gov/?term=", new.taxa.name, "+", new.var.name), paste0("https://pubmed.ncbi.nlm.nih.gov/?term=", new.taxa.name, "+", new.var.name), target = "_blank")))
           })
         }
       }
@@ -3247,7 +3656,7 @@ server = function(input, output, session){
           eta <- as.numeric(input$xgb_cla_eta)
           nfold <- as.numeric(input$xgb_cla_nfold)
           nrounds <- as.numeric(input$xgb_cla_nrounds)
-                    
+          
           sam.dat.na <- check.column.class(sam.dat.na)
           sam.dat.na <- try(cov.logistic.reg(sam.dat.na, y.name), silent = TRUE)
           y.name <- "resid"
@@ -3264,13 +3673,14 @@ server = function(input, output, session){
                                             nfold = nfold,
                                             alpha = alpha,
                                             lambda = lambda,
-                                            loss.func = loss,
-                                            name = name),
+                                            loss.func = "rss",
+                                            name = name,
+                                            p = 0.8),
                                     silent = TRUE)
           }
         }
         else{
-          input.data <- remove.na(data = data, sam.dat = chooseData$sam.dat, y.name = input$xgb_cla_response, level.names = level.names)
+          input.data <- try(remove.na(data = data, sam.dat = chooseData$sam.dat, y.name = input$xgb_cla_response, level.names = level.names), silent = TRUE)
           data <- try(input.data[[1]], silent = TRUE)
           sam.dat.na <- try(input.data[[2]], silent = TRUE)
           
@@ -3294,7 +3704,8 @@ server = function(input, output, session){
                                             lambda = lambda,
                                             stratified = TRUE,
                                             loss.func = eval,
-                                            name = name),
+                                            name = name,
+                                            p = 0.8),
                                     silent = TRUE)
           }
         }
@@ -3306,12 +3717,18 @@ server = function(input, output, session){
         xgb.loss <- list()
         xgb.imp.list <- list()
         xgb.shap <- list()
-        xgb.shap.dep <- list()
+        xgb.dep <- list()
         
         for(name in level.names){
           xgb.loss[[name]] <- try(xgb.error.plot.2(xgb.list, name), silent = TRUE)
-          xgb.shap[[name]] <- try(xgb.shap.summary(xgb.list, name, n = as.numeric(input$xgb_cla_var_num)), silent = TRUE)
-          xgb.shap.dep[[name]] <- try(as.ggplot(xgb.shap.dependence(xgb.list, name, n = as.numeric(input$xgb_cla_var_num))), silent = TRUE)
+          xgb.shap[[name]] <- try(xgb.shap.summary(xgb.list, n = as.numeric(input$xgb_cla_var_num), rank.name = name), silent = TRUE)
+          if(is.cat){ # with covariate(s)
+            xgb.dep[[name]] <- try(xgb.pdp.reg(xgb.list = xgb.list, rank.name = name, n = as.numeric(input$xgb_cla_var_num), data.type = type), silent = TRUE)
+          }
+          else{
+            xgb.dep[[name]] <- try(xgb.pdp.bin(xgb.list = xgb.list, rank.name = name, n = as.numeric(input$xgb_cla_var_num), data.type = type), silent = TRUE)
+          }
+          
         }
         
         xgb.width.list.cla <- list()
@@ -3341,7 +3758,9 @@ server = function(input, output, session){
                                    tabPanel(title = "Partial Dependence", align = "center", br(),
                                             plotOutput(paste0("xgb_cla_SHAP_dep", i), height = 1000, width = xgb.width.list.cla[[i]])),
                                    tabPanel(title = "Error Plot", align = "center", br(),
-                                            plotOutput(paste0("xgb_cla_loss", i), height = 700, width = 700))))})),
+                                            plotOutput(paste0("xgb_cla_loss", i), height = 700, width = 700)),
+                                   tabPanel(title = "Test Error", align = "left", br(),
+                                            uiOutput(paste0("xgb_cla_test_error", i)))))})),
             uiOutput("xgb_cla_chatgpt_ui")
           )
         })
@@ -3356,7 +3775,7 @@ server = function(input, output, session){
           })
           
           output[[paste0("xgb_cla_SHAP_dep", j)]] <- renderPlot({
-            tryCatch(xgb.shap.dep[[level.names[j]]], error = function(e){
+            tryCatch(xgb.dep[[level.names[j]]], error = function(e){
               message("Visualization not available! Check the input.")
               showModal(modalDialog(div("Visualization not available! Check the input.")))
               return(NULL)
@@ -3370,6 +3789,34 @@ server = function(input, output, session){
               return(NULL)
             })
           })
+          
+          if(input$xgb_cla_covariate_yn == "Covariate(s)"){
+            output[[paste0("xgb_cla_test_error", j)]] <- renderUI({
+              tagList(
+                p(strong("Test Results", style = "color:black; font-size:13pt")),
+                tags$ul(
+                  tags$li(p(paste("Test MSE:", try(get.mse(predict(xgb.list[[level.names[j]]]$model, xgb.list[[level.names[j]]]$test), xgb.list[[level.names[j]]]$test.ind$y), silent = TRUE)), style = "font-size:12pt")),
+                  tags$li(p(paste("Test MAE:", try(get.mae(predict(xgb.list[[level.names[j]]]$model, xgb.list[[level.names[j]]]$test), xgb.list[[level.names[j]]]$test.ind$y), silent = TRUE)), style = "font-size:12pt"))
+                  , style = "font-size:12pt")
+              )
+            })
+          }
+          else{
+            output[[paste0("xgb_cla_test_error", j)]] <- renderUI({
+              pred.prob <- predict(xgb.list[[level.names[j]]]$model, xgb.list[[level.names[j]]]$test.ind$x)
+              pred.prob <- data.frame(1-pred.prob, pred.prob)
+              test.y <- as.factor(xgb.list[[level.names[j]]]$test.ind$y)
+              tagList(
+                p(strong("Test Results", style = "color:black; font-size:13pt")),
+                tags$ul(
+                  tags$li(p(paste("Test Misclassification Error:", try(1-get.acc(as.numeric(predict(xgb.list[[level.names[j]]]$model, xgb.list[[level.names[j]]]$test.ind$x) > 0.5), xgb.list[[level.names[j]]]$test.ind$y), silent = TRUE)), style = "font-size:12pt")),
+                  tags$li(p(paste("Test AUC:", try(get.auc(predict(xgb.list[[level.names[j]]]$model, xgb.list[[level.names[j]]]$test.ind$x), xgb.list[[level.names[j]]]$test.ind$y), silent = TRUE)), style = "font-size:12pt")),
+                  tags$li(p(paste("Test Cross Entropy:", try(get.ce(pred.prob, test.y), silent = TRUE)), style = "font-size:12pt"))
+                  , style = "font-size:12pt"),
+                p("", style = "margin-bottom: 15pt")
+              )
+            })
+          }
           
           output$xgb_cla_downloadTabUI <- renderUI({
             tagList(
@@ -3510,6 +3957,12 @@ server = function(input, output, session){
         var.name <- input$xgb_cla_response_var_rename
         api.key <- input$xgb_cla_chatgpt_key
         
+        new.taxa.name <- gsub("[[:punct:]]", "+", taxa.name)
+        new.taxa.name <- gsub(" ", "+", new.taxa.name)
+        
+        new.var.name <- gsub("[[:punct:]]", "+", var.name)
+        new.var.name <- gsub(" ", "+", new.var.name)
+        
         chat_result <- tryCatch(chat_gpt_MiTree(taxa.name, var.name, api.key), error = function(e){
           message("Invalid or incorrect API key. Please check it again.")
           showModal(modalDialog(div("Invalid or incorrect API key. Please check it again.")))
@@ -3518,7 +3971,17 @@ server = function(input, output, session){
         
         if(!is.null(chat_result)){
           output$xgb_cla_chatgpt_vis <-renderUI({
-            tagList(br(), strong(paste("Tell me about the roles of a", taxa.name, "on a", var.name)), br(), br(), p(chat_result))
+            tagList(br(), 
+                    strong(paste("Tell me about the roles of a", taxa.name, "on a", var.name)), 
+                    p(chat_result, style = "margin-top: 10px"), br(),
+                    
+                    strong("Reference Search Results"), br(), 
+                    
+                    p("Google Scholar", style = "margin-top: 10px"), 
+                    p(tags$a(href = paste0("https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=", new.taxa.name, "+", new.var.name,"&btnG="), paste0("https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=", new.taxa.name, "+", new.var.name,"&btnG="), target = "_blank")), 
+                    
+                    p("PubMed"), 
+                    p(tags$a(href = paste0("https://pubmed.ncbi.nlm.nih.gov/?term=", new.taxa.name, "+", new.var.name), paste0("https://pubmed.ncbi.nlm.nih.gov/?term=", new.taxa.name, "+", new.var.name), target = "_blank")))
           })
         }
       }
@@ -3602,16 +4065,16 @@ server = function(input, output, session){
           input.data <- try(cov.remove.na(data = data, sam.dat = chooseData$sam.dat, y.name = input$xgb_reg_response, cov.name = input$xgb_reg_covariate_options, level.names = level.names), silent = TRUE)
           data <- try(input.data[[1]], silent = TRUE)
           sam.dat.na <- try(input.data[[2]], silent = TRUE)
-                    
+          
           y.name <- input$xgb_reg_response
           sam.dat.na <- check.column.class(sam.dat.na)
           sam.dat.na <- try(cov.linear.reg(sam.dat.na, y.name), silent = TRUE)
           y.name <- "resid"
         }
         else{
-          input.data <- remove.na(data = data, sam.dat = chooseData$sam.dat, y.name = input$xgb_reg_response, level.names = level.names)
-          data <- input.data[[1]]
-          sam.dat.na <- input.data[[2]]
+          input.data <- try(remove.na(data = data, sam.dat = chooseData$sam.dat, y.name = input$xgb_reg_response, level.names = level.names), silent = TRUE)
+          data <- try(input.data[[1]], silent = TRUE)
+          sam.dat.na <- try(input.data[[2]], silent = TRUE)
           y.name <- input$xgb_reg_response
         }
         
@@ -3634,7 +4097,8 @@ server = function(input, output, session){
                                               alpha = alpha,
                                               lambda = lambda,
                                               loss.func = loss,
-                                              name = name),
+                                              name = name,
+                                              p = 0.8),
                                       silent = TRUE)
         }
         
@@ -3645,12 +4109,12 @@ server = function(input, output, session){
         xgb.loss.reg <- list()
         xgb.imp.list.reg <- list()
         xgb.shap.reg <- list()
-        xgb.shap.dep.reg <- list()
+        xgb.dep.reg <- list()
         
         for(name in level.names){
           xgb.loss.reg[[name]] <- try(xgb.error.plot.2(xgb.list.reg, name), silent = TRUE)
           xgb.shap.reg[[name]] <- try(xgb.shap.summary(xgb.list.reg, name, n = as.numeric(input$xgb_reg_var_num)), silent = TRUE)
-          xgb.shap.dep.reg[[name]] <- try(as.ggplot(xgb.shap.dependence(xgb.list.reg, name, n = as.numeric(input$xgb_cla_var_num))), silent = TRUE)
+          xgb.dep.reg[[name]] <- try(xgb.pdp.reg(xgb.list = xgb.list.reg, rank.name = name, n = as.numeric(input$xgb_reg_var_num), data.type = type), silent = TRUE)
         }
         
         xgb.width.list.reg <- list()
@@ -3680,7 +4144,9 @@ server = function(input, output, session){
                                    tabPanel(title = "Partial Dependence", align = "center", br(),
                                             plotOutput(paste0("xgb_reg_SHAP_dep", i), height = 1000, width = xgb.width.list.reg[[i]])),
                                    tabPanel(title = "Error Plot", align = "center", br(),
-                                            plotOutput(paste0("xgb_reg_loss", i), height = 700, width = 700))))})),
+                                            plotOutput(paste0("xgb_reg_loss", i), height = 700, width = 700)),
+                                   tabPanel(title = "Test Error", align = "left", br(),
+                                            uiOutput(paste0("xgb_reg_test_error", i)))))})),
             uiOutput("xgb_reg_chatgpt_ui")
           )
         })
@@ -3695,7 +4161,7 @@ server = function(input, output, session){
           })
           
           output[[paste0("xgb_reg_SHAP_dep", j)]] <- renderPlot({
-            tryCatch(xgb.shap.dep.reg[[level.names[j]]], error = function(e){
+            tryCatch(xgb.dep.reg[[level.names[j]]], error = function(e){
               message("Visualization not available! Check the input.")
               showModal(modalDialog(div("Visualization not available! Check the input.")))
               return(NULL)
@@ -3710,6 +4176,16 @@ server = function(input, output, session){
             })
           })
           
+          output[[paste0("xgb_reg_test_error", j)]] <- renderUI({
+            tagList(
+              p(strong("Test Results", style = "color:black; font-size:13pt")),
+              tags$ul(
+                tags$li(p(paste("Test MSE:", try(get.mse(predict(xgb.list.reg[[level.names[j]]]$model, xgb.list.reg[[level.names[j]]]$test), xgb.list.reg[[level.names[j]]]$test.ind$y), silent = TRUE)), style = "font-size:12pt")),
+                tags$li(p(paste("Test MAE:", try(get.mae(predict(xgb.list.reg[[level.names[j]]]$model, xgb.list.reg[[level.names[j]]]$test), xgb.list.reg[[level.names[j]]]$test.ind$y), silent = TRUE)), style = "font-size:12pt"))
+                , style = "font-size:12pt")
+            )
+          })
+
           output$xgb_reg_downloadTabUI <- renderUI({
             tagList(
               p(" ", style = "margin-top: 20px;"),
@@ -3848,6 +4324,12 @@ server = function(input, output, session){
         var.name <- input$xgb_reg_response_var_rename
         api.key <- input$xgb_reg_chatgpt_key
         
+        new.taxa.name <- gsub("[[:punct:]]", "+", taxa.name)
+        new.taxa.name <- gsub(" ", "+", new.taxa.name)
+        
+        new.var.name <- gsub("[[:punct:]]", "+", var.name)
+        new.var.name <- gsub(" ", "+", new.var.name)
+        
         chat_result <- tryCatch(chat_gpt_MiTree(taxa.name, var.name, api.key), error = function(e){
           message("Invalid or incorrect API key. Please check it again.")
           showModal(modalDialog(div("Invalid or incorrect API key. Please check it again.")))
@@ -3856,7 +4338,17 @@ server = function(input, output, session){
         
         if(!is.null(chat_result)){
           output$xgb_reg_chatgpt_vis <-renderUI({
-            tagList(br(), strong(paste("Tell me about the roles of a", taxa.name, "on a", var.name)), br(), p(chat_result))
+            tagList(br(), 
+                    strong(paste("Tell me about the roles of a", taxa.name, "on a", var.name)), 
+                    p(chat_result, style = "margin-top: 10px"), br(),
+                    
+                    strong("Reference Search Results"), br(), 
+                    
+                    p("Google Scholar", style = "margin-top: 10px"), 
+                    p(tags$a(href = paste0("https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=", new.taxa.name, "+", new.var.name,"&btnG="), paste0("https://scholar.google.com/scholar?hl=en&as_sdt=0%2C5&q=", new.taxa.name, "+", new.var.name,"&btnG="), target = "_blank")), 
+                    
+                    p("PubMed"), 
+                    p(tags$a(href = paste0("https://pubmed.ncbi.nlm.nih.gov/?term=", new.taxa.name, "+", new.var.name), paste0("https://pubmed.ncbi.nlm.nih.gov/?term=", new.taxa.name, "+", new.var.name), target = "_blank")))
           })
         }
       }
