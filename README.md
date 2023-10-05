@@ -13,7 +13,7 @@ NeedsCompilation: No
 
 Depends: R(≥ 4.1.0)
 
-Imports: Bioconductor ('BiocManager', 'biomformat', 'phyloseq'); CRAN ('ape', 'bio2mds', 'caret', 'chatgpt', 'compositions', 'data.table', 'DT', 'fontawesome', 'ggplot2', 'ggplotify', 'googleVis', 'grid', 'htmltools', 'phangorn', 'plotly', 'randomForest', 'rpart', 'rpart.plot', 'seqinr', 'SHAPforxgboost', 'shiny', 'shinydashboard', 'shinyjs', 'shinyWidgets', 'stringr', 'tidyverse', 'xgboost', 'xtable', 'zCompositions', 'zip'); GitHub: ('chatgpt', 'dashboardthemes, 'edarf')
+Imports: Bioconductor ('BiocManager', 'biomformat', 'phyloseq'); CRAN ('ape', 'bio2mds', 'caret', 'chatgpt', 'compositions', 'data.table', 'DT', 'fontawesome', 'ggplot2', 'ggplotify', 'googleVis', 'grid', 'htmltools', 'phangorn', 'plotly', 'randomForest', 'rpart', 'rpart.plot', 'seqinr', 'SHAPforxgboost', 'shiny', 'shinydashboard', 'shinyjs', 'shinyWidgets', 'stringr', 'tidyverse', 'xgboost', 'xtable', 'zCompositions'**(1.4.0.1)**, 'zip'); GitHub: ('chatgpt', 'dashboardthemes, 'edarf')
 
 License: GPL 1, GPL 2 
 
