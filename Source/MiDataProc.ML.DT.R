@@ -50,6 +50,9 @@ dt.cla <- function(data, sam.dat.na, y.name, split.method = c("gini", "info"), m
   dt.list[["best.tuned"]] <- cp
   dt.list[["final.model"]] <- best.fit
   if(p != 1) dt.list[["prediction"]] <- predict(best.fit, test_X)
+  dt.list[["data"]] <- list(x = X, y = y)
+  dt.list[["train"]] <- list(x = train_X, y = train_Y)
+  if(p != 1) dt.list[["test"]] <- list(x = test_X, y = test_Y)
   return(dt.list)
 }
 
@@ -87,6 +90,9 @@ dt.reg <- function(data, sam.dat.na, y.name, minsplit = 20, minbucket = round(mi
   dt.list[["best.tuned"]] <- cp
   dt.list[["final.model"]] <- best.fit
   if(p != 1) dt.list[["prediction"]] <- predict(best.fit, test_X)
+  dt.list[["data"]] <- list(x = X, y = y)
+  dt.list[["train"]] <- list(x = train_X, y = train_Y)
+  if(p != 1) dt.list[["test"]] <- list(x = test_X, y = test_Y)
   return(dt.list)
 }
 

@@ -1,5 +1,7 @@
 library(stringr)
 library(chatgpt)
+library(ROCR)
+library(caret)
 
 # Essentials ----------------
 
@@ -54,15 +56,14 @@ get.auc <- function(pred.prob, test.y){
 
 get.ce <- function(pred.prob, test.y){
   ce <- 0
+  test.y.df <-  data.frame(test.y)
+  dummy <- dummyVars("~.", data = test.y.df)
+  test.y <- data.frame(predict(dummy, newdata = test.y.df))
+  
   for(j in 1:length(pred.prob[,2])){
-    if(test.y[j] == 1){
-      ce <- ce - log(pred.prob[j, 2])
-    }
-    else{
-      ce <- ce - log(1 - pred.prob[j, 2])
-    }
+    ce <- ce + as.numeric(test.y[j,]) %*% log(as.numeric(pred.prob[j,]))
   }
-  return(ce)
+  return(-as.numeric(ce))
 }
 
 get.mse <- function(pred, test.y){
@@ -139,20 +140,46 @@ bmc.col.check <- function(sam.dat, type = c("Binary", "Multinomial", "Continuous
 
 col.str.check <- function(sam.dat, name){
   dtype <- character()
-  
-  if((is.character(sam.dat[[name]])) | (is.factor(sam.dat[[name]]))) {
-    dtype <- "factor"
+  if(length(table(sam.dat[[name]])) == 1){
+    dtype <- "none"
+  }
+  else if((is.character(sam.dat[[name]])) | (is.factor(sam.dat[[name]]))) {
+    if(length(unique(sam.dat[[name]])) == nrow(sam.dat)){
+      dtype <- "none"
+    }
+    else{
+      dtype <- "factor"
+    }
   }
   else if(is.numeric(sam.dat[[name]])){
-    if(length(table(sam.dat[[name]])) == 2) dtype = "factor"
-    else dtype = "numeric"
+    if(length(table(sam.dat[[name]])) == 2){
+      dtype <- "factor"
+    }
+    else if(length(unique(sam.dat[[name]])) == nrow(sam.dat)){
+      dtype <- "none"
+    }
+    else{
+      dtype = "numeric"
+    }
   }
-  else dtype = "none"
+  else{
+    dtype = "none"
+  }
   return(dtype)
 }
-  
+
+get.cov.col <- function(sam.dat){
+  dtype <- character()
+  names <- colnames(sam.dat)
+  for(name in names){
+    dtype <- c(dtype, col.str.check(sam.dat, name))
+  }
+  cov.col <- names[dtype != "none"]
+  return(cov.col)
+}
+
 get.cat.levels <- function(sam.dat, y.name){
-  levels <- levels(as.factor(unlist(sam.dat[[y.name]])))
+  levels <- levels(as.factor(unlist(sam.dat$gingival_index)))
   if(length(levels) >= 2 & length(levels) <= 8){
     return(levels)
   }
@@ -221,3 +248,4 @@ check.column.class <- function(sam.dat.na){
   }
   return(sam.dat.na)
 }
+

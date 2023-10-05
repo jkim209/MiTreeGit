@@ -4,6 +4,9 @@ library(phangorn)
 library(zCompositions)
 library(compositions)
 library(stringr)
+library(fossil)
+library(picante)
+library(ecodist)
 
 # Quality Control -----------
 rem.tax.d <- c("", "metagenome", "gut metagenome", "mouse gut metagenome")
@@ -417,4 +420,98 @@ taxa.names.rank <- function(taxa.out){
 taxa.bin.var.func <- function(sam.dat) {
   var.names <- colnames(sam.dat)
   return(var.names)
+}
+
+# Batch Effect Correction -----------
+
+batch.correct.PCoA <- function(qc.biom, rare.biom, qc.biom.bat, rare.biom.bat, batch.var){
+  par(mfrow = c(2, 4))
+  
+  qc.otu.tab <- otu_table(qc.biom)
+  qc.sam.dat <- sample_data(qc.biom)
+  
+  ra.otu.tab <- otu_table(rare.biom)
+  ra.sam.dat <- sample_data(rare.biom)
+  
+  batid <- as.factor(qc.sam.dat[[batch.var]])
+  batid.first.char <- as.factor(substr(batid, 1, 1))
+  
+  cex <- 1.7
+  cex.main <- 1.3
+  cex.sub <- 1
+  label.cex <- 1.3
+  cex.lab <- 1.2
+  
+  ### Bray-Curtis
+  
+  batch.mod <- betadisper(bcdist(t(ra.otu.tab)), batid.first.char)
+  
+  plot(batch.mod, ellipse = TRUE, hull = FALSE, xlab = "PC 1", ylab = "PC 2", main = "Bray-Curtis\n(Before)", sub = "",
+       col = 1:nlevels(batid.first.char), mgp = c(2.5, 1, 0), pch = 1:nlevels(batid.first.char),
+       cex = cex, cex.main = cex.main, cex.sub = cex.sub, label.cex = label.cex, cex.lab = cex.lab)
+  
+  ### Proportion
+  
+  batch.mod <- betadisper(compositions::dist(t(qc.otu.tab)/colSums(qc.otu.tab)), batid.first.char)
+  
+  plot(batch.mod, ellipse = TRUE, hull = FALSE, xlab = "PC 1", ylab = "PC 2", main = "Proportion\n(Before)", sub = "",
+       col = 1:nlevels(batid.first.char), mgp = c(2.5, 1, 0), pch = 1:nlevels(batid.first.char),
+       cex = cex, cex.main = cex.main, cex.sub = cex.sub, label.cex = label.cex, cex.lab = cex.lab)
+  
+  ### Arcsine
+  
+  batch.mod <- betadisper(compositions::dist(asin(sqrt(t(qc.otu.tab)/colSums(qc.otu.tab)))), batid.first.char)
+  
+  plot(batch.mod, ellipse = TRUE, hull = FALSE, xlab = "PC 1", ylab = "PC 2", main = "Arcsine\n(Before)", sub = "",
+       col = 1:nlevels(batid.first.char), mgp = c(2.5, 1, 0), pch = 1:nlevels(batid.first.char),
+       cex = cex, cex.main = cex.main, cex.sub = cex.sub, label.cex = label.cex, cex.lab = cex.lab)
+  
+  ### Aitchison (CLR)
+  
+  batch.mod <- betadisper(compositions::dist(clr(t(qc.otu.tab) + 0.1)), batid.first.char)
+  
+  plot(batch.mod, ellipse = TRUE, hull = FALSE, xlab = "PC 1", ylab = "PC 2", main = "Aitchison\n(Before)", sub = "",
+       col = 1:nlevels(batid.first.char), mgp = c(2.5, 1, 0), pch = 1:nlevels(batid.first.char),
+       cex = cex, cex.main = cex.main, cex.sub = cex.sub, label.cex = label.cex, cex.lab = cex.lab)
+  
+  qc.otu.tab <- otu_table(qc.biom.bat)
+  qc.sam.dat <- sample_data(qc.biom.bat)
+  
+  ra.otu.tab <- otu_table(rare.biom.bat)
+  ra.sam.dat <- sample_data(rare.biom.bat)
+  
+  batid <- as.factor(qc.sam.dat[[batch.var]])
+  batid.first.char <- as.factor(substr(batid, 1, 1))
+  
+  ### Bray-Curtis
+  
+  batch.mod <- betadisper(bcdist(t(ra.otu.tab)), batid.first.char)
+  
+  plot(batch.mod, ellipse = TRUE, hull = FALSE, xlab = "PC 1", ylab = "PC 2", main = "Bray-Curtis\n(After)", sub = "",
+       col = 1:nlevels(batid.first.char), mgp = c(2.5, 1, 0), pch = 1:nlevels(batid.first.char),
+       cex = cex, cex.main = cex.main, cex.sub = cex.sub, label.cex = label.cex, cex.lab = cex.lab)
+  
+  ### Proportion
+  
+  batch.mod <- betadisper(compositions::dist(t(qc.otu.tab)/colSums(qc.otu.tab)), batid.first.char)
+  
+  plot(batch.mod, ellipse = TRUE, hull = FALSE, xlab = "PC 1", ylab = "PC 2", main = "Proportion\n(After)", sub = "",
+       col = 1:nlevels(batid.first.char), mgp = c(2.5, 1, 0), pch = 1:nlevels(batid.first.char),
+       cex = cex, cex.main = cex.main, cex.sub = cex.sub, label.cex = label.cex, cex.lab = cex.lab)
+  
+  ### Arcsine
+  
+  batch.mod <- betadisper(compositions::dist(asin(sqrt(t(qc.otu.tab)/colSums(qc.otu.tab)))), batid.first.char)
+  
+  plot(batch.mod, ellipse = TRUE, hull = FALSE, xlab = "PC 1", ylab = "PC 2", main = "Arcsine\n(After)", sub = "",
+       col = 1:nlevels(batid.first.char), mgp = c(2.5, 1, 0), pch = 1:nlevels(batid.first.char),
+       cex = cex, cex.main = cex.main, cex.sub = cex.sub, label.cex = label.cex, cex.lab = cex.lab)
+  
+  ### Aitchison (CLR)
+  
+  batch.mod <- betadisper(compositions::dist(clr(t(qc.otu.tab) + 0.1)), batid.first.char)
+  
+  plot(batch.mod, ellipse = TRUE, hull = FALSE, xlab = "PC 1", ylab = "PC 2", main = "Aitchison\n(After)", sub = "",
+       col = 1:nlevels(batid.first.char), mgp = c(2.5, 1, 0), pch = 1:nlevels(batid.first.char),
+       cex = cex, cex.main = cex.main, cex.sub = cex.sub, label.cex = label.cex, cex.lab = cex.lab)
 }

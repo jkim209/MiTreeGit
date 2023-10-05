@@ -5,6 +5,8 @@ library(ggplot2)
 library(stringr)
 library(edarf)
 library(data.table)
+library(dplyr)
+library(reshape2)
 
 source("Source/MiDataProc.ML.Models.R")
 
@@ -461,4 +463,126 @@ rf.pd.var.used <- function(rf.list, rank.name, colnames.list, n = 10, is.cat = T
   # new.ind <- sort(ind)
   nm <- nm[ind,, drop = FALSE]
   return(nm)
+}
+
+rf.pdp.bin <- function(rf.list, n, name, data.type){
+  X <- rf.list[[name]]$data$x
+  fit <- rf.list[[name]]$fit
+  rf.importance <- rf.imp.df(rf.list, name, type = 2) %>%
+    mutate(taxon = rownames(rf.imp.df(rf.list, name, type = 2))) %>%
+    arrange(-MeanDecreaseGini) %>%
+    rownames
+  n <- min(length(rf.importance), n)
+  feature <- rf.importance[1:n]
+  result <- data.frame()
+  
+  if(data.type == "clr"){
+    type = "CLR"
+  }
+  else if(data.type == "prop"){
+    type = "Proportion"
+  }
+  else if(data.type == "rare.count"){
+    type = "Rarefied Count"
+  }
+  else if(data.type == "arcsin"){
+    type = "Arcsine-Root"
+  }
+  
+  for(taxon.name in feature){
+    val <- numeric()
+    p1 <- numeric()
+    p2 <- numeric()
+    taxon.val <- seq(min(X[,taxon.name]), max(X[,taxon.name]),len = 100)
+    
+    for(i in 1:length(taxon.val)){
+      newX <- X
+      newX[,taxon.name] <- rep(taxon.val[i], nrow(newX))
+      y_pred_prob <- predict(fit, newX, type = "prob")
+      y_pred_prob_mean <- apply(y_pred_prob, 2, mean)
+      val <- c(val, taxon.val[i])
+      p1 <- c(p1, y_pred_prob_mean[1])
+      p2 <- c(p2, y_pred_prob_mean[2])
+    }
+    prob.result <- data.frame(val, p1, p2) %>%
+      reshape2::melt(id.vars = "val", variable.name = "Category", value.name = "Prob")
+    prob.result$title <- rep(taxon.name, nrow(prob.result))
+    result <- rbind(result, prob.result)
+  }
+  result$title <- factor(result$title, levels = feature)
+  
+  p <- ggplot(result, aes(val, Prob)) + 
+    geom_line(aes(color = Category), size = 0.8) +
+    theme_light() +
+    xlab(type) + 
+    ylab("Predicted Value") +
+    scale_color_discrete(name = "Category", labels = c("0", "1", "2")) +
+    theme(
+      axis.text.x = element_text(size = 7.5),
+      axis.text.y = element_text(size = 7.5),
+      strip.text = element_text(size=12),
+      panel.spacing.x = unit(1, "lines"),
+      legend.title = element_blank()
+    ) +
+    facet_wrap(~ title, scales = "free_x", nrow = 5, dir = "v")
+  p
+}
+
+rf.pdp.reg <- function(rf.list, n, name, data.type){
+  X <- rf.list[[name]]$data$x
+  fit <- rf.list[[name]]$fit
+  rf.importance <- rf.imp.df(rf.list, name, type = 1) %>%
+    mutate(taxon = rownames(rf.imp.df(rf.list, name, type = 1))) %>%
+    arrange(-IncMSE) %>%
+    rownames
+  n <- min(length(rf.importance), n)
+  feature <- rf.importance[1:n]
+  result <- data.frame()
+  
+  if(data.type == "clr"){
+    type = "CLR"
+  }
+  else if(data.type == "prop"){
+    type = "Proportion"
+  }
+  else if(data.type == "rare.count"){
+    type = "Rarefied Count"
+  }
+  else if(data.type == "arcsin"){
+    type = "Arcsine-Root"
+  }
+  
+  for(taxon.name in feature){
+    val <- numeric()
+    y_hat <- numeric()
+    taxon.val <- seq(min(X[,taxon.name]), max(X[,taxon.name]),len = 100)
+    
+    for(i in 1:length(taxon.val)){
+      newX <- X
+      newX[,taxon.name] <- rep(taxon.val[i], nrow(newX))
+      y_pred <- predict(fit, newX)
+      val <- c(val, taxon.val[i])
+      y_hat <- c(y_hat, mean(y_pred))
+    }
+    pred.result <- data.frame(val, y_hat) %>%
+      reshape2::melt(id.vars = "val", value.name = "Prediction")
+    pred.result$title <- rep(taxon.name, nrow(pred.result))
+    result <- rbind(result, pred.result)
+  }
+  result$title <- factor(result$title, levels = feature)
+  
+  p <- ggplot(result, aes(val, Prediction)) + 
+    geom_line(size = 0.8) +
+    theme_light() +
+    xlab(type) + 
+    ylab("Predicted Value") +
+    theme(
+      axis.text.x = element_text(size = 7.5),
+      axis.text.y = element_text(size = 7.5),
+      strip.text = element_text(size=12),
+      panel.spacing.x = unit(1, "lines"),
+      legend.title = element_blank()
+    ) +
+    facet_wrap(~ title, scales = "free_x", nrow = 5, dir = "v")
+  p
 }
