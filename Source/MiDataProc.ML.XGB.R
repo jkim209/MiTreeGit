@@ -175,77 +175,6 @@ xgb.reg <- function(data, sam.dat.na, y.name, eta = 0.001, nrounds = 500, nfold 
   return(xgb.list)
 }
 
-xgb.mult <- function(data, sam.dat.na, y.name, p = 0.75, eta = 0.001, nfold = c(5, 10), nrounds = 500, alpha = 0, lambda = 1, stratified = TRUE,
-                     loss.func = c("mlogloss", "merror"), name){
-  xgb.list <- list()
-  X = as.matrix(data[[name]])
-  y = sam.dat.na[[y.name]]
-  cat.names <- category.names(sam.dat.na, y.name)
-  
-  tr.ind <- y %>% createDataPartition(p = p, list = FALSE)
-  train_X <- X[tr.ind,]
-  train_Y <- y[tr.ind]
-  
-  test_X <- X[-tr.ind,]
-  test_Y <- y[-tr.ind]
-  
-  dtrain <- xgb.DMatrix(data = train_X, label = train_Y)
-  dtest <- xgb.DMatrix(data = test_X, label = test_Y)
-  
-  # Tuning Proceses
-  searchGridSubCol <- expand.grid(max_depth = seq(4, 10, 2), # 4
-                                  min_child_weight = seq(2, 6, 2), # 3
-                                  colsample_bytree = seq(0.5, 0.75, 1), # 3
-                                  gamma = seq(0, 0.6, 0.2)) # 4
-  
-  system.time(
-    hyper.parameter.tuning.1 <- apply(searchGridSubCol, 1, function(parameterList){
-      #Extract Parameters to test
-      currentMaxDepth <- parameterList[["max_depth"]]
-      currentMCW <- parameterList[["min_child_weight"]]
-      currentCbT <- parameterList[["colsample_bytree"]]
-      currentGamma <- parameterList[["gamma"]]
-      xgboostModelCV <- xgb.cv(data =  dtrain, nrounds = nrounds, nfold = nfold, showsd = TRUE, stratified = stratified,
-                               metrics = loss.func, verbose = TRUE, eval_metric = loss.func, num_class = length(cat.names),
-                               objective = "multi:softmax", max_depth = currentMaxDepth, min_child_weight = currentMCW, eta = eta,
-                               print_every_n = 10, booster = "gbtree", gamma = currentGamma, colsample_bytree = currentCbT,
-                               early_stopping_rounds = 150, nthread = 1)
-      
-      xvalidationScores <- as.data.frame(xgboostModelCV$evaluation_log)
-      niter <- xgboostModelCV$best_iteration
-      test <- as.numeric(tail(xvalidationScores[,4], 1))
-      train <- as.numeric(tail(xvalidationScores[,2],1))
-      output <- return(c(niter, train, test, currentMaxDepth, currentMCW, currentCbT, currentGamma))})
-  )
-  
-  output <- as.data.frame(t(hyper.parameter.tuning.1))
-  varnames <- c("Optimal_trees", "Train", "Test", "max_depth", "min_child_weight", "colsample_bytree", "gamma")
-  names(output) <- varnames
-  
-  opt.tree <- output[which.min(output$Test),][[1]]
-  max_depth <- output[which.min(output$Test),][[4]]
-  min_child_weight <- output[which.min(output$Test),][[5]]
-  colsample_bytree <- output[which.min(output$Test),][[6]]
-  gamma <- output[which.min(output$Test),][[7]]
-  
-  watchlist <- list(train = dtrain, eval = dtest)
-  
-  xgboostFit <- xgb.train(data = dtrain, nrounds = nrounds, showsd = TRUE, objective = "multi:softmax", watchlist = watchlist, tree_method = "exact",
-                          verbose = TRUE, eval_metric = loss.func, num_class = length(cat.names), colsample_bytree = colsample_bytree,
-                          max_depth = max_depth, min_child_weight = min_child_weight, eta = eta, print_every_n = 10, booster = "gbtree",
-                          gamma = gamma, alpha = alpha, lambda = lambda, early_stopping_rounds = 100, nthread = 1)
-  
-  pred <- xgboostFit %>% predict(dtest)
-  
-  xgb.list[["model"]] <- xgboostFit
-  xgb.list[["loss.func"]] <- loss.func
-  xgb.list[["tuning.result"]] <- output
-  xgb.list[["pred"]] <- pred
-  xgb.list[["train"]] <- list(x = train_X, y = train_Y)
-  xgb.list[["test"]] <- list(x = test_X, y = test_Y)
-  return(xgb.list)
-}
-
 xgb.error.plot.2 <- function(xgb.list, rank.name){
   options(scipen = 999)
   eval.log <- xgb.list[[rank.name]][["cv.model"]]$evaluation_log
@@ -288,28 +217,31 @@ xgb.error.plot.2 <- function(xgb.list, rank.name){
           legend.title = element_blank())
 }
 
-xgb.imp.list <- function(xgb.list, level.names){
+xgb.shap.imp <- function(xgb.list, level.names, n = 20){
   imp.list <- list()
   for(name in level.names){
-    imp.list[[name]] <- xgb.importance(model = xgb.list[[name]]$model)
+    X <- data.matrix(xgb.list[[name]]$train.ind$x)
+    shap <- shap.prep(xgb.list[[name]]$model, X_train = X, top_n = n)
+    imp.list[[name]] <- data.frame(shap)
   }
   return(imp.list)
 }
 
-xgb.imp.list.ma <- function(xgb.list, level.names, data){
-  xgb.importance <- xgb.imp.list(xgb.list, level.names)
-  
-  d <- subset(as.data.frame(xgb.importance[[level.names]]), select = c("Feature", "Gain"))
-  ma <- colMeans(data[[level.names]])
-  d$MeanAbundance <- rep(NA, nrow(d))
-  
-  for(v in names(ma)){
-    if(v %in% d$Feature){
-      ind <- which(v == d$Feature)
-      d$MeanAbundance[ind] <- ma[[v]]
-    }
+xgb.shap.imp.var <- function(xgb.list, rank.name, colnames.list, n = 20){
+  X <- data.matrix(xgb.list[[rank.name]]$train.ind$x)
+  shap <- shap.prep(xgb.list[[rank.name]]$model, X_train = X, top_n = n)
+  if(n > ncol(xgb.list[[rank.name]]$train.ind$x)){
+    n <- ncol(xgb.list[[rank.name]]$train.ind$x)
   }
-  return(d)
+  var <- levels(shap$variable)[1:n]
+  nm <- colnames.df(colnames.list, rank.name)
+  ind <- integer()
+  for(v in var){
+    ind <- c(ind, which(v == rownames(nm)))
+  }
+  # new.ind <- sort(ind)
+  nm <- nm[ind,, drop = FALSE]
+  return(nm)
 }
 
 xgb.shap.summary <- function(xgb.list, rank.name, n = 20){
@@ -327,51 +259,12 @@ xgb.shap.summary <- function(xgb.list, rank.name, n = 20){
     )
 }
 
-xgb.prediction <- function(xgb.list, level.names, is.cat = TRUE){
-  train <- numeric()
-  test <- numeric()
-  OT <- numeric()
-  Depth <- numeric()
-  mcw <- numeric()
-  cbt <- numeric()
-  gamma <- numeric()
-  
-  if(is.cat){
-    for(name in level.names){
-      train <- c(train, mean(ifelse(predict(xgb.list[[name]]$model, xgb.list[[name]]$train$x, type = "prob") > 0.5, 1, 0) == xgb.list[[name]]$train$y))
-      test <- c(test, mean(ifelse(predict(xgb.list[[name]]$model, xgb.list[[name]]$test$x, type = "prob") > 0.5, 1, 0) == xgb.list[[name]]$test$y))
-      OT <- c(OT, xgb.list[[name]]$tuning.result[which.min(xgb.list[[name]]$tuning.result$Test),][[1]])
-      Depth <- c(Depth, xgb.list[[name]]$tuning.result[which.min(xgb.list[[name]]$tuning.result$Test),][[4]])
-      mcw <- c(mcw, xgb.list[[name]]$tuning.result[which.min(xgb.list[[name]]$tuning.result$Test),][[5]])
-      cbt <- c(cbt, xgb.list[[name]]$tuning.result[which.min(xgb.list[[name]]$tuning.result$Test),][[6]])
-      gamma <- c(gamma, xgb.list[[name]]$tuning.result[which.min(xgb.list[[name]]$tuning.result$Test),][[7]])
-    }
-  }
-  else{
-    for(name in level.names){
-      train <- c(train, sqrt(mean((predict(xgb.list[[name]]$model, xgb.list[[name]]$train$x) - xgb.list[[name]]$train$y)^2)))
-      test <- c(test, sqrt(mean((predict(xgb.list[[name]]$model, xgb.list[[name]]$test$x) - xgb.list[[name]]$test$y)^2)))
-      OT <- c(OT, xgb.list[[name]]$tuning.result[which.min(xgb.list[[name]]$tuning.result$Test),][[1]])
-      Depth <- c(Depth, xgb.list[[name]]$tuning.result[which.min(xgb.list[[name]]$tuning.result$Test),][[4]])
-      mcw <- c(mcw, xgb.list[[name]]$tuning.result[which.min(xgb.list[[name]]$tuning.result$Test),][[5]])
-      cbt <- c(cbt, xgb.list[[name]]$tuning.result[which.min(xgb.list[[name]]$tuning.result$Test),][[6]])
-      gamma <- c(gamma, xgb.list[[name]]$tuning.result[which.min(xgb.list[[name]]$tuning.result$Test),][[7]])
-    }
-  }
-  
-  
-  outcome <- data.frame(Train_Error = train, Test_Error = test, Optimal_Tree = OT, Maximum_Depth = Depth, Min_child_weight = mcw,
-                        Colsample_bytree = cbt, Gamma = gamma)
-  rownames(outcome) <- str_to_title(level.names)
-  return(outcome)
-}
-
 xgb.imp.var <- function(xgb.importance, rank.name, n = 10){
   imp.var <- (xgb.importance[[rank.name]] %>% top_n(n, Gain))$Feature
   return(imp.var)
 }
 
-xgb.pdp.bin <- function(xgb.list, n, rank.name, data.type){
+xgb.pdp.bin <- function(xgb.list, n, rank.name, data.type, cat.name){
   X <- xgb.list[[rank.name]]$train.ind$x
   fit <- xgb.list[[rank.name]]$model
   xgb.importance <- shap.prep(fit, X_train = X, top_n = n) %>% 
@@ -421,7 +314,7 @@ xgb.pdp.bin <- function(xgb.list, n, rank.name, data.type){
     theme_light() +
     xlab(type) + 
     ylab("Predicted Value") +
-    scale_color_discrete(name = "Category", labels = c("0", "1")) +
+    scale_color_discrete(name = "Category", labels = cat.name) +
     theme(
       axis.text.x = element_text(size = 7.5),
       axis.text.y = element_text(size = 7.5),

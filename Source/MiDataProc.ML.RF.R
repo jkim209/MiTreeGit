@@ -192,13 +192,13 @@ rf.imp.df.order <- function(rf.list, rank.name, n = 10, is.cat = TRUE, colnames.
   return(imp.df)
 }
 
-rf.imp.plot <- function(rf.list, rank.name, type, n = 30, is.cat = TRUE, colnames.list, data, data.type){
+rf.imp.plot <- function(rf.list, rank.name, type, n = 30, is.cat = TRUE, data, data.type){
   
   imp.df1 <- rf.imp.df(rf.list, rank.name, type = 1)
   imp.df2 <- rf.imp.df(rf.list, rank.name, type = 2)
-  new.names <- colnames.list$origin[[rank.name]]
-  rownames(imp.df1) <- new.names
-  rownames(imp.df2) <- new.names
+  # new.names <- colnames.list$origin[[rank.name]]
+  # rownames(imp.df1) <- new.names
+  # rownames(imp.df2) <- new.names
   
   ma <- get.mean.abundance(data, rank.name)
   imp.df1 <- data.frame(imp.df1, ma)
@@ -346,108 +346,6 @@ rf.imp.plot.order <- function(rf.list, rank.name, is.cat = TRUE){
   return(list(imp_df = imp_df, nm = nm))
 }
 
-rf.pd.plot <- function (rf.list, rank.name, facet = NULL, is.cat = TRUE, n = 10, data.type){
-  imp <- rf.imp.plot.order(rf.list, rank.name, is.cat = is.cat)
-  imp_df <- imp$imp_df
-  if(n > ncol(rf.list[[rank.name]]$train$x)){
-    n <- ncol(rf.list[[rank.name]]$train$x)
-  }
-  nm <- imp$nm[1:n]
-  
-  type <- character()
-  if(data.type == "clr"){
-    type = "CLR"
-  }
-  else if(data.type == "prop"){
-    type = "Proportion"
-  }
-  else if(data.type == "rare.count"){
-    type = "Rarefied Count"
-  }
-  else if(data.type == "arcsin"){
-    type = "Arcsine-Root"
-  }
-  
-  pd <- partial_dependence(fit = rf.list[[rank.name]]$fit, vars = nm, data = cbind(rf.list[[rank.name]]$train$x, rf.list[[rank.name]]$train$y))
-  atts = attributes(pd)
-  if (length(atts$vars) > 2 & atts$interaction) {
-    stop("too many variables to plot.")
-  }
-  if (!is.null(facet)) {
-    if (!any(facet %in% atts$vars)) 
-      stop("facet must be one of the variables in the pd argument.")
-    ordering = unique(sort(pd[[facet]]))
-    if (is.factor(pd[[facet]])) 
-      labels = paste0(facet, " = ", as.character(ordering))
-    else labels = paste0(facet, " = ", as.character(signif(ordering, 
-                                                           3)))
-    pd[[facet]] = factor(pd[[facet]], levels = ordering, 
-                         labels = labels)
-    vars = atts$vars[atts$vars != facet]
-  }
-  else {
-    vars = atts$vars
-  }
-  if (!is.null(facet) | !atts$interaction) {
-    dat = data.table::melt(pd, id.vars = c(atts$target, facet), na.rm = TRUE)
-    if (is.character(dat$value)) {
-      dat$value = as.numeric(dat$value)
-    }
-    if (length(atts$target) > 1) 
-      dat = data.table::melt(dat, id.vars = c("variable", "value", 
-                                  facet), value.name = "prediction", variable.name = "class", 
-                 na.rm = TRUE)
-    if (length(atts$target) == 1) {
-      p = ggplot(dat, aes_string("value", atts$target))
-    }
-    else {
-      p = ggplot(dat, aes_string("value", "prediction", 
-                                 colour = "class"))
-    }
-    p = p +
-      geom_line() +
-      geom_point() + 
-      theme_light()
-  }
-  else {
-    dat = pd
-    dat = data.table::melt(dat, id.vars = vars)
-    p = ggplot(dat, aes_string(vars[1], vars[2], fill = "value")) + 
-      geom_raster()
-    facet = "variable"
-  }
-  if (length(vars) == 1) 
-    p = p + labs(x = vars)
-  if (length(atts$vars) > 1) {
-    if (!atts$interaction) {
-      p = p +
-        facet_wrap(~variable, scales = "free_x", nrow = 5, dir = "v") +
-        xlab(type) + ylab("Predicted Value") +
-        theme(
-          axis.text.x = element_text(size = 7.5),
-          axis.text.y = element_text(size = 7.5),
-          strip.text = element_text(size=12),
-          panel.spacing.x = unit(1, "lines"),
-          legend.title = element_blank()
-        )
-        # theme_light()
-    }
-    else {
-      p = p +
-        facet_wrap(as.formula(paste0("~", facet)), nrow = 5, dir = "v") +
-        xlab(type) + ylab("Predicted Value") +
-        theme(
-          axis.text.x = element_text(size = 7.5),
-          axis.text.y = element_text(size = 7.5),
-          strip.text = element_text(size=12),
-          panel.spacing.x = unit(1, "lines"),
-          legend.title = element_blank()
-        )
-    }
-  }
-  p
-}
-
 rf.pd.var.used <- function(rf.list, rank.name, colnames.list, n = 10, is.cat = TRUE){
   imp <- rf.imp.plot.order(rf.list, rank.name, is.cat = is.cat)
   imp_df <- imp$imp_df
@@ -465,7 +363,7 @@ rf.pd.var.used <- function(rf.list, rank.name, colnames.list, n = 10, is.cat = T
   return(nm)
 }
 
-rf.pdp.bin <- function(rf.list, n, name, data.type){
+rf.pdp.bin <- function(rf.list, n, name, data.type, cat.name){
   X <- rf.list[[name]]$data$x
   fit <- rf.list[[name]]$fit
   rf.importance <- rf.imp.df(rf.list, name, type = 2) %>%
@@ -516,7 +414,7 @@ rf.pdp.bin <- function(rf.list, n, name, data.type){
     theme_light() +
     xlab(type) + 
     ylab("Predicted Value") +
-    scale_color_discrete(name = "Category", labels = c("0", "1", "2")) +
+    scale_color_discrete(name = "Category", labels = cat.name) +
     theme(
       axis.text.x = element_text(size = 7.5),
       axis.text.y = element_text(size = 7.5),
