@@ -334,7 +334,7 @@ source("Source/MiDataProc.ML.XGB.R")
                                   br(),
                                   p(" ", style = "margin-bottom: -20px;"),
                                   
-                                  h4(strong("Erroneous taxonomic names")),
+                                  h4(strong("Errors in taxonomic names")),
                                   textInput("rem.str", label = "Complete match", value = ""),
                                   QC_TAXA_NAME_COMMENT1,
                                   
