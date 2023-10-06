@@ -2949,7 +2949,7 @@ server = function(input, output, session){
           }
           else{
             rf.imp.plot.list[[name]] <- try(rf.imp.plot(rf.list, name, n = as.numeric(input$rf_cla_var_num), type = 2, is.cat = is.cat, data = data, data.type = type), silent = TRUE)
-            pd.plot.list[[name]] <- try(rf.pdp.bin(rf.list, n = as.numeric(input$rf_cla_var_num), name = name, data.type = type, cat.names = cat.name), silent = TRUE)
+            pd.plot.list[[name]] <- try(rf.pdp.bin(rf.list, n = as.numeric(input$rf_cla_var_num), name = name, data.type = type, cat.name = cat.name), silent = TRUE)
           }
         }
         
