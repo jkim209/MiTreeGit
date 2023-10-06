@@ -1,7 +1,7 @@
 ls.pkg <- c('shiny', 'rmarkdown', 'seqinr', 'shinydashboard', 'tidyverse', 'plotly', 'shinyWidgets', 'shinyjs', 'googleVis', 'xtable',
-            'DT', 'htmltools', 'phangorn', 'bios2mds', 'zip', 'ape', 'compositions', 'stringr', 'rpart', 'rpart.plot', 
+            'DT', 'htmltools', 'phangorn', 'bios2mds', 'zip', 'ape', 'zCompositions', 'compositions', 'stringr', 'rpart', 'rpart.plot', 
             'caret', 'ggplot2', 'randomForest', 'data.table', 'xgboost', 'SHAPforxgboost', 'fontawesome', 'grid', 'ggplotify',
-            'BiocManager', 'remotes', 'reshape2', 'fossil', 'ROCR', 'picante', 'ecodist', 'devtools')
+            'BiocManager', 'remotes', 'reshape2', 'fossil', 'ROCR', 'picante', 'ecodist', 'ecodist')
 
 new.pkg <- ls.pkg[!(ls.pkg %in% installed.packages()[,"Package"])]
 if(length(new.pkg)) install.packages(new.pkg, repos = 'https://cloud.r-project.org/')
@@ -949,7 +949,9 @@ server = function(input, output, session){
       h4(strong("Output variable", style = "color:black")),
       p("E.g., a variable on the host's health or disease status.", style = "font-size:10pt"),
       p(" ", style = "margin-bottom: +15px;"),
-      selectInput("dt_cla_response", label = NULL, choices = bmc.col.check(chooseData$sam.dat, type = "Binary"), selected = bmc.col.check(chooseData$sam.dat, type = "Binary")[1], width = '70%'))
+      selectInput("dt_cla_response", label = NULL, 
+                  choices = tryCatch(bmc.col.check(chooseData$sam.dat, type = "Binary"), error = function(e) return(NULL)), 
+                  selected = tryCatch(bmc.col.check(chooseData$sam.dat, type = "Binary")[1], error = function(e) return(NULL)), width = '70%'))
   })
   
   output$dt_cla_covariate <- renderUI({
@@ -1029,7 +1031,9 @@ server = function(input, output, session){
       h4(strong("Output variable", style = "color:black")),
       p("E.g., a variable on the host's health or disease status.", style = "font-size:10pt"),
       p(" ", style = "margin-bottom: +15px;"),
-      selectInput("dt_reg_response", label = NULL, choices = bmc.col.check(chooseData$sam.dat, type = "Continuous"), selected = bmc.col.check(chooseData$sam.dat, type = "Continuous")[1], width = '70%'))
+      selectInput("dt_reg_response", label = NULL, 
+                  choices = tryCatch(bmc.col.check(chooseData$sam.dat, type = "Continuous"), error = function(e) return(NULL)), 
+                  selected = tryCatch(bmc.col.check(chooseData$sam.dat, type = "Continuous")[1], error = function(e) return(NULL)), width = '70%'))
   })
   
   output$dt_reg_covariate <- renderUI({
@@ -1101,7 +1105,9 @@ server = function(input, output, session){
       h4(strong("Output variable", style = "color:black")),
       p("E.g., a variable on the host's health or disease status.", style = "font-size:10pt"),
       p(" ", style = "margin-bottom: +15px;"),
-      selectInput("rf_cla_response", label = NULL, choices = bmc.col.check(chooseData$sam.dat, type = "Binary"), selected = bmc.col.check(chooseData$sam.dat, type = "Binary")[1], width = '70%'))
+      selectInput("rf_cla_response", label = NULL, 
+                  choices = tryCatch(bmc.col.check(chooseData$sam.dat, type = "Binary"), error = function(e) return(NULL)), 
+                  selected = tryCatch(bmc.col.check(chooseData$sam.dat, type = "Binary")[1], error = function(e) return(NULL)), width = '70%'))
   })
   
   output$rf_cla_covariate <- renderUI({
@@ -1186,7 +1192,9 @@ server = function(input, output, session){
       h4(strong("Output variable", style = "color:black")),
       p("E.g., a variable on the host's health or disease status.", style = "font-size:10pt"),
       p(" ", style = "margin-bottom: +15px;"),
-      selectInput("rf_reg_response", label = NULL, choices = bmc.col.check(chooseData$sam.dat, type = "Continuous"), selected = bmc.col.check(chooseData$sam.dat, type = "Continuous")[1], width = '70%'))
+      selectInput("rf_reg_response", label = NULL, 
+                  choices = tryCatch(bmc.col.check(chooseData$sam.dat, type = "Continuous"), error = function(e) return(NULL)), 
+                  selected = tryCatch(bmc.col.check(chooseData$sam.dat, type = "Continuous")[1], error = function(e) return(NULL)), width = '70%'))
   })
   
   output$rf_reg_covariate <- renderUI({
@@ -1258,7 +1266,9 @@ server = function(input, output, session){
       h4(strong("Output variable", style = "color:black")),
       p("E.g., a variable on the host's health or disease status.", style = "font-size:10pt"),
       p(" ", style = "margin-bottom: +15px;"),
-      selectInput("xgb_cla_response", label = NULL, choices = bmc.col.check(chooseData$sam.dat, type = "Binary"), selected = bmc.col.check(chooseData$sam.dat, type = "Binary")[1], width = '70%'))
+      selectInput("xgb_cla_response", label = NULL, 
+                  choices = tryCatch(bmc.col.check(chooseData$sam.dat, type = "Binary"), error = function(e) return(NULL)), 
+                  selected = tryCatch(bmc.col.check(chooseData$sam.dat, type = "Binary")[1], error = function(e) return(NULL)), width = '70%'))
   })
   
   output$xgb_cla_covariate <- renderUI({
@@ -1353,7 +1363,9 @@ server = function(input, output, session){
       h4(strong("Output variable", style = "color:black")),
       p("E.g., a variable on the host's health or disease status.", style = "font-size:10pt"),
       p(" ", style = "margin-bottom: +15px;"),
-      selectInput("xgb_reg_response", label = NULL, choices = bmc.col.check(chooseData$sam.dat, type = "Continuous"), selected = bmc.col.check(chooseData$sam.dat, type = "Continuous")[1], width = '70%'))
+      selectInput("xgb_reg_response", label = NULL, 
+                  choices = tryCatch(bmc.col.check(chooseData$sam.dat, type = "Continuous"), error = function(e) return(NULL)), 
+                  selected = tryCatch(bmc.col.check(chooseData$sam.dat, type = "Continuous")[1], error = function(e) return(NULL)), width = '70%'))
   })
   
   output$xgb_reg_covariate <- renderUI({
@@ -2203,8 +2215,7 @@ server = function(input, output, session){
                 p(strong("Test Results", style = "color:black; font-size:13pt")),
                 tags$ul(
                   tags$li(p(paste("Test Misclassification Error:", try(1-get.acc(predict(dt.list[[level.names[j]]]$final.model, dt.list[[level.names[j]]]$test$x), dt.list[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt")),
-                  tags$li(p(paste("Test AUC:", try(get.auc(predict(dt.list[[level.names[j]]]$final.model, dt.list[[level.names[j]]]$test$x, type = "prob")[,2], dt.list[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt")),
-                  tags$li(p(paste("Test Cross Entropy:", try(get.ce(predict(dt.list[[level.names[j]]]$final.model, dt.list[[level.names[j]]]$test$x, type = "prob"), dt.list[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt"))
+                  tags$li(p(paste("Test AUC:", try(get.auc(predict(dt.list[[level.names[j]]]$final.model, dt.list[[level.names[j]]]$test$x, type = "prob")[,2], dt.list[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt"))
                   , style = "font-size:12pt"),
                 p("", style = "margin-bottom: 15pt")
               )
@@ -2905,6 +2916,7 @@ server = function(input, output, session){
           sam.dat.na <- try(input.data[[2]], silent = TRUE)
           
           y.name <- input$rf_cla_response
+          cat.name <- category.names(sam.dat.na, y.name)
           nfold <- as.numeric(input$rf_cla_nfold)
           ntree <- as.numeric(input$rf_cla_ntree)
           
@@ -2932,12 +2944,12 @@ server = function(input, output, session){
         
         for(name in level.names){
           if(input$rf_cla_covariate_yn == "Covariate(s)"){
-            rf.imp.plot.list[[name]] <- try(rf.imp.plot(rf.list, name, n = as.numeric(input$rf_cla_var_num), type = 1, is.cat = is.cat, colnames.list = colnames.list.cla, data = data, data.type = type), silent = TRUE)
+            rf.imp.plot.list[[name]] <- try(rf.imp.plot(rf.list, name, n = as.numeric(input$rf_cla_var_num), type = 1, is.cat = is.cat, data = data, data.type = type), silent = TRUE)
             pd.plot.list[[name]] <- try(rf.pdp.reg(rf.list, n = as.numeric(input$rf_cla_var_num), name = name, data.type = type), silent = TRUE)
           }
           else{
-            rf.imp.plot.list[[name]] <- try(rf.imp.plot(rf.list, name, n = as.numeric(input$rf_cla_var_num), type = 2, is.cat = is.cat, colnames.list = colnames.list.cla, data = data, data.type = type), silent = TRUE)
-            pd.plot.list[[name]] <- try(rf.pdp.bin(rf.list, n = as.numeric(input$rf_cla_var_num), name = name, data.type = type), silent = TRUE)
+            rf.imp.plot.list[[name]] <- try(rf.imp.plot(rf.list, name, n = as.numeric(input$rf_cla_var_num), type = 2, is.cat = is.cat, data = data, data.type = type), silent = TRUE)
+            pd.plot.list[[name]] <- try(rf.pdp.bin(rf.list, n = as.numeric(input$rf_cla_var_num), name = name, data.type = type, cat.names = cat.name), silent = TRUE)
           }
         }
         
@@ -2964,10 +2976,11 @@ server = function(input, output, session){
             do.call(tabsetPanel, lapply(1:length(level.names), function(i) {
               tabPanel(title = str_to_title(level.names[i]), align = "center",
                        tabsetPanel(tabPanel(title = "Importance", align = "center", br(),
-                                            plotOutput(paste0("rf_cla_imp", i), height = 700, width = 700)),
+                                            plotOutput(paste0("rf_cla_imp", i), height = 700, width = 700), br(),
+                                            dataTableOutput(paste0("rf_cla_column_table1", i), height = "auto", width = 700)),
                                    tabPanel(title = "Partial Dependence", align = "center", br(),
                                             plotOutput(paste0("rf_cla_pd", i), height = 750, width = rf.width.list[[i]]), br(),
-                                            dataTableOutput(paste0("rf_cla_column_table", i), height = "auto", width = 600)),
+                                            dataTableOutput(paste0("rf_cla_column_table2", i), height = "auto", width = 700)),
                                    tabPanel(title = "CV Error", align = "center", br(),
                                             plotOutput(paste0("rf_cla_cv", i), height = 700, width = 700)),
                                    tabPanel(title = "OOB Error", align = "center", br(),
@@ -2995,7 +3008,15 @@ server = function(input, output, session){
             })
           })
           
-          output[[paste0("rf_cla_column_table", j)]] <- renderDataTable({
+          output[[paste0("rf_cla_column_table1", j)]] <- renderDataTable({
+            tryCatch(rf.pd.var.used(rf.list, level.names[[j]], colnames.list.cla, n = as.numeric(input$rf_cla_var_num), is.cat = is.cat), error = function(e){
+              message("Visualization not available! Check the input.")
+              showModal(modalDialog(div("Visualization not available! Check the input.")))
+              return(NULL)
+            })
+          })
+          
+          output[[paste0("rf_cla_column_table2", j)]] <- renderDataTable({
             tryCatch(rf.pd.var.used(rf.list, level.names[[j]], colnames.list.cla, n = as.numeric(input$rf_cla_var_num), is.cat = is.cat), error = function(e){
               message("Visualization not available! Check the input.")
               showModal(modalDialog(div("Visualization not available! Check the input.")))
@@ -3037,8 +3058,7 @@ server = function(input, output, session){
                 p(strong("Test Results", style = "color:black; font-size:13pt")),
                 tags$ul(
                   tags$li(p(paste("Test Misclassification Error:", try(1-get.acc(predict(rf.list[[level.names[j]]]$fit, rf.list[[level.names[j]]]$test$x), rf.list[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt")),
-                  tags$li(p(paste("Test AUC:", try(get.auc(predict(rf.list[[level.names[j]]]$fit, rf.list[[level.names[j]]]$test$x, type = "prob")[,2], rf.list[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt")),
-                  tags$li(p(paste("Test Cross Entropy:", try(get.ce(predict(rf.list[[level.names[j]]]$fit, rf.list[[level.names[j]]]$test$x, type = "prob"), rf.list[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt"))
+                  tags$li(p(paste("Test AUC:", try(get.auc(predict(rf.list[[level.names[j]]]$fit, rf.list[[level.names[j]]]$test$x, type = "prob")[,2], rf.list[[level.names[j]]]$test$y), silent = TRUE)), style = "font-size:12pt"))
                   , style = "font-size:12pt"),
                 p("", style = "margin-bottom: 15pt")
               )
@@ -3315,7 +3335,7 @@ server = function(input, output, session){
         pd.plot.list.reg <- list()
         rf.test.error.reg <- list()
         for(name in level.names){
-          rf.imp.plot.list.reg[[name]] <- try(rf.imp.plot(rf.list.reg, name, n = as.numeric(input$rf_reg_var_num), type = 1, is.cat = FALSE, colnames.list = colnames.list.reg, data = data, data.type = type), silent = TRUE)
+          rf.imp.plot.list.reg[[name]] <- try(rf.imp.plot(rf.list.reg, name, n = as.numeric(input$rf_reg_var_num), type = 1, is.cat = FALSE, data = data, data.type = type), silent = TRUE)
           pd.plot.list.reg[[name]] <- try(rf.pdp.reg(rf.list.reg, n = as.numeric(input$rf_reg_var_num), name = name, data.type = type), silent = TRUE)
         }
         
@@ -3342,10 +3362,11 @@ server = function(input, output, session){
             do.call(tabsetPanel, lapply(1:length(level.names), function(i) {
               tabPanel(title = str_to_title(level.names[i]), align = "center",
                        tabsetPanel(tabPanel(title = "Importance", align = "center", br(),
-                                            plotOutput(paste0("rf_reg_imp", i), height = 700, width = 700)),
+                                            plotOutput(paste0("rf_reg_imp", i), height = 700, width = 700), br(),
+                                            dataTableOutput(paste0("rf_reg_column_table1", i), height = "auto", width = 700)),
                                    tabPanel(title = "Partial Dependence", align = "center", br(),
                                             plotOutput(paste0("rf_reg_pd", i), height = 750, width = rf.width.list.reg[[i]]), br(),
-                                            dataTableOutput(paste0("rf_reg_column_table", i), height = "auto", width = 600)),
+                                            dataTableOutput(paste0("rf_reg_column_table2", i), height = "auto", width = 700)),
                                    tabPanel(title = "CV Error", align = "center", br(),
                                             plotOutput(paste0("rf_reg_cv", i), height = 700, width = 700)),
                                    tabPanel(title = "OOB Error", align = "center", br(),
@@ -3373,7 +3394,15 @@ server = function(input, output, session){
             })
           })
           
-          output[[paste0("rf_reg_column_table", j)]] <- renderDataTable({
+          output[[paste0("rf_reg_column_table1", j)]] <- renderDataTable({
+            tryCatch(rf.pd.var.used(rf.list.reg, level.names[[j]], colnames.list.reg, n = as.numeric(input$rf_reg_var_num), is.cat = FALSE), error = function(e){
+              message("Visualization not available! Check the input.")
+              showModal(modalDialog(div("Visualization not available! Check the input.")))
+              return(NULL)
+            })
+          })
+          
+          output[[paste0("rf_reg_column_table2", j)]] <- renderDataTable({
             tryCatch(rf.pd.var.used(rf.list.reg, level.names[[j]], colnames.list.reg, n = as.numeric(input$rf_reg_var_num), is.cat = FALSE), error = function(e){
               message("Visualization not available! Check the input.")
               showModal(modalDialog(div("Visualization not available! Check the input.")))
@@ -3396,7 +3425,7 @@ server = function(input, output, session){
               return(NULL)
             })
           })
-          print(rf.list.reg[[level.names[j]]]$test$y)
+          
           output[[paste0("rf_reg_test_error", j)]] <- renderUI({
             tagList(
               p(strong("Test Results", style = "color:black; font-size:13pt")),
@@ -3645,6 +3674,8 @@ server = function(input, output, session){
           }
         }
         data <- taxa.out[[type]]
+        colnames.list <- colnames.to.ind(data)
+        data <- change.colnames(data, colnames.list$new)
         
         if(input$xgb_cla_covariate_yn == "Covariate(s)"){
           input.data <- try(cov.remove.na(data = data, sam.dat = chooseData$sam.dat, y.name = input$xgb_cla_response, cov.name = input$xgb_cla_covariate_options, level.names = level.names), silent = TRUE)
@@ -3685,6 +3716,8 @@ server = function(input, output, session){
           sam.dat.na <- try(input.data[[2]], silent = TRUE)
           
           y.name <- input$xgb_cla_response
+          cat.name <- category.names(sam.dat.na, y.name)
+          sam.dat.na[[y.name]] <- ifelse(sam.dat.na[[y.name]] == cat.name[1], 0, 1)
           eval <- xgb.model.input.cla$eval
           eta <- as.numeric(input$xgb_cla_eta)
           nfold <- as.numeric(input$xgb_cla_nfold)
@@ -3711,8 +3744,7 @@ server = function(input, output, session){
         }
         
         incProgress(2/10, message = "Visualizations in progress")        
-        xgb.importance <- try(xgb.imp.list(xgb.list, level.names), silent = TRUE)
-        is.cat <- ifelse(input$xgb_cla_covariate_yn == "Covariate(s)", FALSE, TRUE)
+        xgb.importance <- try(xgb.shap.imp(xgb.list, level.names, n = as.numeric(input$xgb_cla_var_num)), silent = TRUE)
         
         xgb.loss <- list()
         xgb.imp.list <- list()
@@ -3720,15 +3752,14 @@ server = function(input, output, session){
         xgb.dep <- list()
         
         for(name in level.names){
-          xgb.loss[[name]] <- try(xgb.error.plot.2(xgb.list, name), silent = TRUE)
-          xgb.shap[[name]] <- try(xgb.shap.summary(xgb.list, n = as.numeric(input$xgb_cla_var_num), rank.name = name), silent = TRUE)
-          if(is.cat){ # with covariate(s)
-            xgb.dep[[name]] <- try(xgb.pdp.reg(xgb.list = xgb.list, rank.name = name, n = as.numeric(input$xgb_cla_var_num), data.type = type), silent = TRUE)
+          xgb.loss[[name]] <- try(xgb.error.plot.2(xgb.list, name), silent = FALSE)
+          xgb.shap[[name]] <- try(xgb.shap.summary(xgb.list, n = as.numeric(input$xgb_cla_var_num), rank.name = name), silent = FALSE)
+          if(input$xgb_cla_covariate_yn == "Covariate(s)"){
+            xgb.dep[[name]] <- try(xgb.pdp.reg(xgb.list = xgb.list, rank.name = name, n = as.numeric(input$xgb_cla_var_num), data.type = type), silent = FALSE)
           }
           else{
-            xgb.dep[[name]] <- try(xgb.pdp.bin(xgb.list = xgb.list, rank.name = name, n = as.numeric(input$xgb_cla_var_num), data.type = type), silent = TRUE)
+            xgb.dep[[name]] <- try(xgb.pdp.bin(xgb.list = xgb.list, rank.name = name, n = as.numeric(input$xgb_cla_var_num), data.type = type, cat.name = cat.name), silent = FALSE)
           }
-          
         }
         
         xgb.width.list.cla <- list()
@@ -3746,7 +3777,7 @@ server = function(input, output, session){
             n <- as.numeric(input$xgb_cla_var_num)
             n <- n / 5
           }
-          xgb.width.list.cla[[name]] <- n * 215
+          xgb.width.list.cla[[name]] <- n * 160
         }
         
         output$xgb_cla_results <- renderUI({
@@ -3754,9 +3785,11 @@ server = function(input, output, session){
             do.call(tabsetPanel, lapply(1:length(level.names), function(i) {
               tabPanel(title = str_to_title(level.names[i]), align = "center",
                        tabsetPanel(tabPanel(title = "Importance", align = "center", br(),
-                                            plotOutput(paste0("xgb_cla_SHAP", i), height = 700, width = 700)),
+                                            plotOutput(paste0("xgb_cla_SHAP", i), height = 700, width = 700), br(),
+                                            dataTableOutput(paste0("xgb_cla_column_table1", i), height = "auto", width = 700)),
                                    tabPanel(title = "Partial Dependence", align = "center", br(),
-                                            plotOutput(paste0("xgb_cla_SHAP_dep", i), height = 1000, width = xgb.width.list.cla[[i]])),
+                                            plotOutput(paste0("xgb_cla_SHAP_dep", i), height = 750, width = xgb.width.list.cla[[i]]), br(),
+                                            dataTableOutput(paste0("xgb_cla_column_table2", i), height = "auto", width = 700)),
                                    tabPanel(title = "Error Plot", align = "center", br(),
                                             plotOutput(paste0("xgb_cla_loss", i), height = 700, width = 700)),
                                    tabPanel(title = "Test Error", align = "left", br(),
@@ -3776,6 +3809,22 @@ server = function(input, output, session){
           
           output[[paste0("xgb_cla_SHAP_dep", j)]] <- renderPlot({
             tryCatch(xgb.dep[[level.names[j]]], error = function(e){
+              message("Visualization not available! Check the input.")
+              showModal(modalDialog(div("Visualization not available! Check the input.")))
+              return(NULL)
+            })
+          })
+          
+          output[[paste0("xgb_cla_column_table1", j)]] <- renderDataTable({
+            tryCatch(xgb.shap.imp.var(xgb.list, level.names[[j]], colnames.list, n = as.numeric(input$xgb_cla_var_num)), error = function(e){
+              message("Visualization not available! Check the input.")
+              showModal(modalDialog(div("Visualization not available! Check the input.")))
+              return(NULL)
+            })
+          })
+
+          output[[paste0("xgb_cla_column_table2", j)]] <- renderDataTable({
+            tryCatch(xgb.shap.imp.var(xgb.list, level.names[[j]], colnames.list, n = as.numeric(input$xgb_cla_var_num)), error = function(e){
               message("Visualization not available! Check the input.")
               showModal(modalDialog(div("Visualization not available! Check the input.")))
               return(NULL)
@@ -3803,15 +3852,11 @@ server = function(input, output, session){
           }
           else{
             output[[paste0("xgb_cla_test_error", j)]] <- renderUI({
-              pred.prob <- predict(xgb.list[[level.names[j]]]$model, xgb.list[[level.names[j]]]$test.ind$x)
-              pred.prob <- data.frame(1-pred.prob, pred.prob)
-              test.y <- as.factor(xgb.list[[level.names[j]]]$test.ind$y)
               tagList(
                 p(strong("Test Results", style = "color:black; font-size:13pt")),
                 tags$ul(
                   tags$li(p(paste("Test Misclassification Error:", try(1-get.acc(as.numeric(predict(xgb.list[[level.names[j]]]$model, xgb.list[[level.names[j]]]$test.ind$x) > 0.5), xgb.list[[level.names[j]]]$test.ind$y), silent = TRUE)), style = "font-size:12pt")),
-                  tags$li(p(paste("Test AUC:", try(get.auc(predict(xgb.list[[level.names[j]]]$model, xgb.list[[level.names[j]]]$test.ind$x), xgb.list[[level.names[j]]]$test.ind$y), silent = TRUE)), style = "font-size:12pt")),
-                  tags$li(p(paste("Test Cross Entropy:", try(get.ce(pred.prob, test.y), silent = TRUE)), style = "font-size:12pt"))
+                  tags$li(p(paste("Test AUC:", try(get.auc(predict(xgb.list[[level.names[j]]]$model, xgb.list[[level.names[j]]]$test.ind$x), xgb.list[[level.names[j]]]$test.ind$y), silent = TRUE)), style = "font-size:12pt"))
                   , style = "font-size:12pt"),
                 p("", style = "margin-bottom: 15pt")
               )
@@ -3864,7 +3909,7 @@ server = function(input, output, session){
         
         xgb_cla_imp_var_list <- list()
         for(name in level.names){
-          xgb_cla_imp_var_list[[name]] <- try(xgb.imp.var(xgb.importance, name, n = 10), silent = TRUE)
+          xgb_cla_imp_var_list[[name]] <- try(xgb.shap.imp.var(xgb.list, name, colnames.list, n = 10)[,1], silent = TRUE)
         }
         output$xgb_cla_chatgpt_ui <- renderUI({
           tagList(
@@ -4060,6 +4105,8 @@ server = function(input, output, session){
           }
         }
         data <- taxa.out[[type]]
+        colnames.list.reg <- colnames.to.ind(data)
+        data <- change.colnames(data, colnames.list.reg$new)
         
         if (input$xgb_reg_covariate_yn == "Covariate(s)"){
           input.data <- try(cov.remove.na(data = data, sam.dat = chooseData$sam.dat, y.name = input$xgb_reg_response, cov.name = input$xgb_reg_covariate_options, level.names = level.names), silent = TRUE)
@@ -4103,7 +4150,7 @@ server = function(input, output, session){
         }
         
         incProgress(2/10, message = "Visualizations in progress")        
-        xgb.importance <- xgb.imp.list(xgb.list.reg, level.names)
+        xgb.importance <- try(xgb.shap.imp(xgb.list.reg, level.names, n = as.numeric(input$xgb_reg_var_num)), silent = TRUE)
         
         # Loss
         xgb.loss.reg <- list()
@@ -4132,7 +4179,7 @@ server = function(input, output, session){
             n <- as.numeric(input$xgb_reg_var_num)
             n <- n / 5
           }
-          xgb.width.list.reg[[name]] <- n * 215
+          xgb.width.list.reg[[name]] <- n * 160
         }
         
         output$xgb_reg_results <- renderUI({
@@ -4140,9 +4187,11 @@ server = function(input, output, session){
             do.call(tabsetPanel, lapply(1:length(level.names), function(i) {
               tabPanel(title = str_to_title(level.names[i]), align = "center",
                        tabsetPanel(tabPanel(title = "Importance", align = "center", br(),
-                                            plotOutput(paste0("xgb_reg_SHAP", i), height = 700, width = 700)),
+                                            plotOutput(paste0("xgb_reg_SHAP", i), height = 700, width = 700), br(),
+                                            dataTableOutput(paste0("xgb_reg_column_table1", i), height = "auto", width = 700)),
                                    tabPanel(title = "Partial Dependence", align = "center", br(),
-                                            plotOutput(paste0("xgb_reg_SHAP_dep", i), height = 1000, width = xgb.width.list.reg[[i]])),
+                                            plotOutput(paste0("xgb_reg_SHAP_dep", i), height = 750, width = xgb.width.list.reg[[i]]), br(),
+                                            dataTableOutput(paste0("xgb_reg_column_table2", i), height = "auto", width = 700)),
                                    tabPanel(title = "Error Plot", align = "center", br(),
                                             plotOutput(paste0("xgb_reg_loss", i), height = 700, width = 700)),
                                    tabPanel(title = "Test Error", align = "left", br(),
@@ -4162,6 +4211,22 @@ server = function(input, output, session){
           
           output[[paste0("xgb_reg_SHAP_dep", j)]] <- renderPlot({
             tryCatch(xgb.dep.reg[[level.names[j]]], error = function(e){
+              message("Visualization not available! Check the input.")
+              showModal(modalDialog(div("Visualization not available! Check the input.")))
+              return(NULL)
+            })
+          })
+          
+          output[[paste0("xgb_reg_column_table1", j)]] <- renderDataTable({
+            tryCatch(xgb.shap.imp.var(xgb.list.reg, level.names[[j]], colnames.list.reg, n = as.numeric(input$xgb_reg_var_num)), error = function(e){
+              message("Visualization not available! Check the input.")
+              showModal(modalDialog(div("Visualization not available! Check the input.")))
+              return(NULL)
+            })
+          })
+          
+          output[[paste0("xgb_reg_column_table2", j)]] <- renderDataTable({
+            tryCatch(xgb.shap.imp.var(xgb.list.reg, level.names[[j]], colnames.list.reg, n = as.numeric(input$xgb_reg_var_num)), error = function(e){
               message("Visualization not available! Check the input.")
               showModal(modalDialog(div("Visualization not available! Check the input.")))
               return(NULL)
@@ -4232,7 +4297,7 @@ server = function(input, output, session){
         
         xgb_reg_imp_var_list <- list()
         for(name in level.names){
-          xgb_reg_imp_var_list[[name]] <- try(xgb.imp.var(xgb.importance, name, n = 10), silent = TRUE)
+          xgb_reg_imp_var_list[[name]] <- try(xgb.shap.imp.var(xgb.list.reg, name, colnames.list.reg, n = 10)[,1], silent = TRUE)
         }
         
         output$xgb_reg_chatgpt_ui <- renderUI({
