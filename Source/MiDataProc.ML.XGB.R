@@ -20,8 +20,8 @@ xgb.cla <- function(data, sam.dat.na, y.name, eta = 0.001, nrounds = 500, nfold 
   X = as.matrix(data[[name]])
   y = sam.dat.na[[y.name]]
   cat.names <- category.names(sam.dat.na, y.name)
-  # data.dmatrix <- xgb.DMatrix(data = X, label = y)
   
+  set.seed(578)
   tr.ind <- y %>% createDataPartition(p = p, list = FALSE)
   train_X <- X[tr.ind,]
   train_Y <- y[tr.ind]
@@ -31,11 +31,13 @@ xgb.cla <- function(data, sam.dat.na, y.name, eta = 0.001, nrounds = 500, nfold 
   
   dtrain <- xgb.DMatrix(data = train_X, label = train_Y)
   dtest <- xgb.DMatrix(data = test_X, label = test_Y)
+  dwhole <- xgb.DMatrix(data = X, label = y)
   
   ind <- 1
   xgb.cv.list <- list()
   output <- data.frame()
   
+  # CV to find the optimal parameters
   for(currentMaxDepth in seq(4, 10, 2)){
     for(currentMCW in seq(2, 6, 2)){
       for(currentCbT in seq(0.5, 0.75, 1)){
@@ -79,19 +81,29 @@ xgb.cla <- function(data, sam.dat.na, y.name, eta = 0.001, nrounds = 500, nfold 
     gamma <- output[cv.ind,][[7]]
   }
   
+  # Model with train data
   set.seed(578)
   xgboostFit <- xgb.train(data = dtrain, nrounds = opt.tree, objective = "binary:logistic", tree_method = "exact", verbose = TRUE, eval_metric = loss.func,
                           max_depth = max_depth, colsample_bytree = colsample_bytree, eta = eta, min_child_weight = min_child_weight, print_every_n = 10,
                           booster = "gbtree", gamma = gamma, alpha = alpha, lambda = lambda, nthread = 1)
   
-  xgb.list[["model"]] <- xgboostFit
+  # Model with the whole data
+  set.seed(578)
+  final.xgboostFit <- xgb.train(data = dwhole, nrounds = opt.tree, objective = "binary:logistic", tree_method = "exact", verbose = TRUE, eval_metric = loss.func,
+                          max_depth = max_depth, colsample_bytree = colsample_bytree, eta = eta, min_child_weight = min_child_weight, print_every_n = 10,
+                          booster = "gbtree", gamma = gamma, alpha = alpha, lambda = lambda, nthread = 1)
+  
+  xgb.list[["model"]] <- xgboostFit              # Model with test set
+  xgb.list[["final.model"]] <- final.xgboostFit  # Model with whole data set
   xgb.list[["cv.model"]] <- cv.model
   xgb.list[["loss"]] <- loss.func
   xgb.list[["tuning.result"]] <- output
   xgb.list[["train"]] <- dtrain
   xgb.list[["test"]] <- dtest
+  xgb.list[["data"]] <- dwhole
   xgb.list[["train.ind"]] <- list(x = train_X, y = train_Y)
   xgb.list[["test.ind"]] <- list(x = test_X, y = test_Y)
+  xgb.list[["data.ind"]] <- list(x = X, y = y)
   return(xgb.list)
 }
 
@@ -100,8 +112,8 @@ xgb.reg <- function(data, sam.dat.na, y.name, eta = 0.001, nrounds = 500, nfold 
   xgb.list <- list()
   X = as.matrix(data[[name]])
   y = sam.dat.na[[y.name]]
-  # data.dmatrix <- xgb.DMatrix(data = X, label = y)
   
+  set.seed(578)
   tr.ind <- y %>% createDataPartition(p = p, list = FALSE)
   train_X <- X[tr.ind,]
   train_Y <- y[tr.ind]
@@ -111,6 +123,7 @@ xgb.reg <- function(data, sam.dat.na, y.name, eta = 0.001, nrounds = 500, nfold 
   
   dtrain <- xgb.DMatrix(data = train_X, label = train_Y)
   dtest <- xgb.DMatrix(data = test_X, label = test_Y)
+  dwhole <- xgb.DMatrix(data = X, label = y)
   
   if(loss.func == "huber"){
     # loss <- "reg:pseudohubererror"
@@ -159,19 +172,29 @@ xgb.reg <- function(data, sam.dat.na, y.name, eta = 0.001, nrounds = 500, nfold 
   colsample_bytree <- output[cv.ind,][[6]]
   gamma <- output[cv.ind,][[7]]
   
+  # Model with train data
   set.seed(578)
   xgboostFit <- xgb.train(data = dtrain, nrounds = opt.tree, objective = loss, tree_method = "exact", verbose = TRUE, eval_metric = eval.metric,
                           max_depth = max_depth, colsample_bytree = colsample_bytree, eta = eta, min_child_weight = min_child_weight, print_every_n = 10,
                           booster = "gbtree", gamma = gamma, alpha = alpha, lambda = lambda, nthread = 1)
   
-  xgb.list[["model"]] <- xgboostFit
+  # Model with the whole data
+  set.seed(578)
+  final.xgboostFit <- xgb.train(data = dwhole, nrounds = opt.tree, objective = loss, tree_method = "exact", verbose = TRUE, eval_metric = eval.metric,
+                          max_depth = max_depth, colsample_bytree = colsample_bytree, eta = eta, min_child_weight = min_child_weight, print_every_n = 10,
+                          booster = "gbtree", gamma = gamma, alpha = alpha, lambda = lambda, nthread = 1)
+  
+  xgb.list[["model"]] <- xgboostFit              # Model with test set
+  xgb.list[["final.model"]] <- final.xgboostFit  # Model with whole data set
   xgb.list[["cv.model"]] <- cv.model
   xgb.list[["loss"]] <- loss.func
   xgb.list[["tuning.result"]] <- output
   xgb.list[["train"]] <- dtrain
   xgb.list[["test"]] <- dtest
+  xgb.list[["data"]] <- dwhole
   xgb.list[["train.ind"]] <- list(x = train_X, y = train_Y)
   xgb.list[["test.ind"]] <- list(x = test_X, y = test_Y)
+  xgb.list[["data.ind"]] <- list(x = X, y = y)
   return(xgb.list)
 }
 
@@ -220,18 +243,18 @@ xgb.error.plot.2 <- function(xgb.list, rank.name){
 xgb.shap.imp <- function(xgb.list, level.names, n = 20){
   imp.list <- list()
   for(name in level.names){
-    X <- data.matrix(xgb.list[[name]]$train.ind$x)
-    shap <- shap.prep(xgb.list[[name]]$model, X_train = X, top_n = n)
+    X <- data.matrix(xgb.list[[name]]$data.ind$x)
+    shap <- shap.prep(xgb.list[[name]]$final.model, X_train = X, top_n = n)
     imp.list[[name]] <- data.frame(shap)
   }
   return(imp.list)
 }
 
 xgb.shap.imp.var <- function(xgb.list, rank.name, colnames.list, n = 20){
-  X <- data.matrix(xgb.list[[rank.name]]$train.ind$x)
-  shap <- shap.prep(xgb.list[[rank.name]]$model, X_train = X, top_n = n)
-  if(n > ncol(xgb.list[[rank.name]]$train.ind$x)){
-    n <- ncol(xgb.list[[rank.name]]$train.ind$x)
+  X <- data.matrix(xgb.list[[rank.name]]$data.ind$x)
+  shap <- shap.prep(xgb.list[[rank.name]]$final.model, X_train = X, top_n = n)
+  if(n > ncol(xgb.list[[rank.name]]$data.ind$x)){
+    n <- ncol(xgb.list[[rank.name]]$data.ind$x)
   }
   var <- levels(shap$variable)[1:n]
   nm <- colnames.df(colnames.list, rank.name)
@@ -245,8 +268,8 @@ xgb.shap.imp.var <- function(xgb.list, rank.name, colnames.list, n = 20){
 }
 
 xgb.shap.summary <- function(xgb.list, rank.name, n = 20){
-  X <- data.matrix(xgb.list[[rank.name]]$train.ind$x)
-  shap <- shap.prep(xgb.list[[rank.name]]$model, X_train = X, top_n = n)
+  X <- data.matrix(xgb.list[[rank.name]]$data.ind$x)
+  shap <- shap.prep(xgb.list[[rank.name]]$final.model, X_train = X, top_n = n)
   shap.plot.summary(shap, scientific = FALSE) +
     theme(
       axis.line.y = element_blank(), 
@@ -265,8 +288,8 @@ xgb.imp.var <- function(xgb.importance, rank.name, n = 10){
 }
 
 xgb.pdp.bin <- function(xgb.list, n, rank.name, data.type, cat.name){
-  X <- xgb.list[[rank.name]]$train.ind$x
-  fit <- xgb.list[[rank.name]]$model
+  X <- xgb.list[[rank.name]]$data.ind$x
+  fit <- xgb.list[[rank.name]]$final.model
   xgb.importance <- shap.prep(fit, X_train = X, top_n = n) %>% 
     group_by(variable) %>% 
     summarise(mean_value = mean(mean_value)) %>%
@@ -327,8 +350,8 @@ xgb.pdp.bin <- function(xgb.list, n, rank.name, data.type, cat.name){
 }
 
 xgb.pdp.reg <- function(xgb.list, n, rank.name, data.type){
-  X <- xgb.list[[rank.name]]$train.ind$x
-  fit <- xgb.list[[rank.name]]$model
+  X <- xgb.list[[rank.name]]$data.ind$x
+  fit <- xgb.list[[rank.name]]$final.model
   xgb.importance <- shap.prep(fit, X_train = X, top_n = n) %>% 
     group_by(variable) %>% 
     summarise(mean_value = mean(mean_value)) %>%

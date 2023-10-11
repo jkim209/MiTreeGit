@@ -23,6 +23,7 @@ rf.cla.rev <- function(data, sam.dat.na, y.name, nfold = c(5, 10), ntree, strati
   X = data[[name]]
   y = as.factor(sam.dat.na[[y.name]])
   
+  set.seed(578)
   tr.ind <- y %>% createDataPartition(p = p, list = FALSE)
 
   # Train / Test Split
@@ -32,16 +33,18 @@ rf.cla.rev <- function(data, sam.dat.na, y.name, nfold = c(5, 10), ntree, strati
   test_X = X[-tr.ind,]
   test_Y = y[-tr.ind]
   
+  # CV to get optimal number of predictors
   set.seed(578)
   rfcv <- rfcv(train_X, train_Y, cv.fold=nfold, scale="log", step=0.8, recursive=FALSE, ntree = ntree)
   (mtry <- get.opt.pred(rfcv))
   
+  # Model with train data
   train_X <- remove.symb(train_X)
   new.dat <- cbind(train_X, train_Y)
   colnames(new.dat)[dim(new.dat)[2]] <- y.name
-
+  
   f1 <<- as.formula(paste(y.name, "~", ".", sep=" "))
-
+  
   if(stratified){
     set.seed(578)
     fit <- randomForest(f1, data = new.dat, mtry = mtry, ntree = ntree, importance = TRUE, strata = new.dat[[y.name]])
@@ -51,9 +54,23 @@ rf.cla.rev <- function(data, sam.dat.na, y.name, nfold = c(5, 10), ntree, strati
     fit <- randomForest(f1, data = new.dat, mtry = mtry, ntree = ntree, importance = TRUE)
   }
   
+  # Model with the whole data
+  X <- remove.symb(X)
+  new.dat <- cbind(X, y)
+  colnames(new.dat)[dim(new.dat)[2]] <- y.name
+  
+  if(stratified){
+    set.seed(578)
+    final.fit <- randomForest(f1, data = new.dat, mtry = mtry, ntree = ntree, importance = TRUE, strata = new.dat[[y.name]])
+  }
+  else{
+    set.seed(578)
+    final.fit <- randomForest(f1, data = new.dat, mtry = mtry, ntree = ntree, importance = TRUE)
+  }
+  
   rf.list[["rfcv"]] <- rfcv
   rf.list[["fit"]] <- fit
-  if(p != 1) rf.list[["predicted"]] <- predict(fit, test_X)
+  rf.list[["final.fit"]] <- final.fit
   rf.list[["data"]] <- list(x = X, y = y)
   rf.list[["train"]] <- list(x = train_X, y = train_Y)
   if(p != 1) rf.list[["test"]] <- list(x = test_X, y = test_Y)
@@ -66,7 +83,7 @@ rf.reg.rev <- function(data, sam.dat.na, y.name, nfold = c(5, 10), ntree, name, 
   X = data[[name]]
   y = sam.dat.na[[y.name]]
   
-  set.seed(487)
+  set.seed(578)
   tr.ind <- y %>% createDataPartition(p = p, list = FALSE)
 
   # Train / Test Split
@@ -76,21 +93,32 @@ rf.reg.rev <- function(data, sam.dat.na, y.name, nfold = c(5, 10), ntree, name, 
   test_X = X[-tr.ind,]
   test_Y = y[-tr.ind]
   
+  # CV to get optimal number of predictors
   set.seed(578)
   rfcv <- rfcv(train_X, train_Y, cv.fold=nfold, scale="log", step=0.8, recursive=FALSE, ntree = ntree)
   (mtry <- get.opt.pred(rfcv))
   
+  # Model with train data
   train_X <- remove.symb(train_X)
   new.dat <- cbind(train_X, train_Y)
   colnames(new.dat)[dim(new.dat)[2]] <- y.name
   
   f1 <<- as.formula(paste(y.name, "~", ".", sep=" "))
+  
   set.seed(578)
   fit <- randomForest(f1, data = new.dat, mtry = mtry, ntree = ntree, importance = TRUE)
   
+  # Model with the whole data
+  X <- remove.symb(X)
+  new.dat <- cbind(X, y)
+  colnames(new.dat)[dim(new.dat)[2]] <- y.name
+  
+  set.seed(578)
+  final.fit <- randomForest(f1, data = new.dat, mtry = mtry, ntree = ntree, importance = TRUE)
+  
   rf.list[["rfcv"]] <- rfcv
   rf.list[["fit"]] <- fit
-  if(p != 1) rf.list[["predicted"]] <- predict(fit, test_X)
+  rf.list[["final.fit"]] <- final.fit
   rf.list[["data"]] <- list(x = X, y = y)
   rf.list[["train"]] <- list(x = train_X, y = train_Y)
   if(p != 1) rf.list[["test"]] <- list(x = test_X, y = test_Y)
@@ -150,7 +178,7 @@ error.plot <- function(rf.list, rank.name, is.cat = TRUE){
 }
 
 rf.imp.df <- function(rf.list, rank.name, type){
-  fit <- rf.list[[rank.name]]$fit
+  fit <- rf.list[[rank.name]]$final.fit
   if(type == 0){
     imp <- randomForest::importance(fit)
   }
@@ -196,9 +224,6 @@ rf.imp.plot <- function(rf.list, rank.name, type, n = 30, is.cat = TRUE, data, d
   
   imp.df1 <- rf.imp.df(rf.list, rank.name, type = 1)
   imp.df2 <- rf.imp.df(rf.list, rank.name, type = 2)
-  # new.names <- colnames.list$origin[[rank.name]]
-  # rownames(imp.df1) <- new.names
-  # rownames(imp.df2) <- new.names
   
   ma <- get.mean.abundance(data, rank.name)
   imp.df1 <- data.frame(imp.df1, ma)
@@ -365,7 +390,7 @@ rf.pd.var.used <- function(rf.list, rank.name, colnames.list, n = 10, is.cat = T
 
 rf.pdp.bin <- function(rf.list, n, name, data.type, cat.name){
   X <- rf.list[[name]]$data$x
-  fit <- rf.list[[name]]$fit
+  fit <- rf.list[[name]]$final.fit
   rf.importance <- rf.imp.df(rf.list, name, type = 2) %>%
     mutate(taxon = rownames(rf.imp.df(rf.list, name, type = 2))) %>%
     arrange(-MeanDecreaseGini) %>%
@@ -428,7 +453,7 @@ rf.pdp.bin <- function(rf.list, n, name, data.type, cat.name){
 
 rf.pdp.reg <- function(rf.list, n, name, data.type){
   X <- rf.list[[name]]$data$x
-  fit <- rf.list[[name]]$fit
+  fit <- rf.list[[name]]$final.fit
   rf.importance <- rf.imp.df(rf.list, name, type = 1) %>%
     mutate(taxon = rownames(rf.imp.df(rf.list, name, type = 1))) %>%
     arrange(-IncMSE) %>%

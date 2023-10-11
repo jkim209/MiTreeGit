@@ -13,6 +13,7 @@ dt.cla <- function(data, sam.dat.na, y.name, split.method = c("gini", "info"), m
   y <- as.factor(sam.dat.na[[y.name]])
   X <- remove.symb(X)
   
+  set.seed(578)
   tr.ind <- y %>% createDataPartition(p = p, list = FALSE)
 
   # Train / Test Split
@@ -22,11 +23,7 @@ dt.cla <- function(data, sam.dat.na, y.name, split.method = c("gini", "info"), m
   test_X = X[-tr.ind,]
   test_Y = y[-tr.ind]
   
-  new.dat <- cbind(train_X, train_Y)
-  colnames(new.dat)[dim(new.dat)[2]] <- y.name
-  new.dat[[y.name]] <- as.factor(new.dat[[y.name]])
-  
-  # Modeling
+  # Modeling Method
   if(split.method == "gini"){
     split <- "gini"
   }
@@ -34,22 +31,41 @@ dt.cla <- function(data, sam.dat.na, y.name, split.method = c("gini", "info"), m
     split <- "information"
   }
   
+  # CV to get the optimal complex parameter
+  new.dat <- cbind(train_X, train_Y)
+  colnames(new.dat)[dim(new.dat)[2]] <- y.name
+  new.dat[[y.name]] <- as.factor(new.dat[[y.name]])
+  
   f1 <<- as.formula(paste(y.name, "~", ".", sep=" "))
   set.seed(578)
   control <- rpart.control(minsplit = minsplit, minbucket = minbucket, cp = 1e-5, xval = nfold)
   fit <- rpart(f1, data = new.dat, method = "class", control = control, parms = list(split = split))
+  
   if(identical(class(fit$cptable[-1,]), c("matrix", "array"))){
     cp <- fit$cptable[-1,][which.min(fit$cptable[-1,][,"xerror"]), "CP"]
   }
   else{
     cp <- fit$cptable[-1,][[1]]
   }
+  
+  # Model with train data
+  set.seed(578)
   best.fit <- prune(fit, cp = cp)
+  
+  # Model with the whole data
+  new.dat <- cbind(X, y)
+  colnames(new.dat)[dim(new.dat)[2]] <- y.name
+  new.dat[[y.name]] <- as.factor(new.dat[[y.name]])
+  
+  set.seed(578)
+  control <- rpart.control(minsplit = minsplit, minbucket = minbucket, cp = 1e-5, xval = nfold)
+  final.best.fit <- rpart(f1, data = new.dat, method = "class", control = control, parms = list(split = split))
+  final.best.fit <- prune(final.best.fit, cp = cp)
   
   dt.list[["model"]] <- fit
   dt.list[["best.tuned"]] <- cp
   dt.list[["final.model"]] <- best.fit
-  if(p != 1) dt.list[["prediction"]] <- predict(best.fit, test_X)
+  dt.list[["final.model.whole.data"]] <- final.best.fit
   dt.list[["data"]] <- list(x = X, y = y)
   dt.list[["train"]] <- list(x = train_X, y = train_Y)
   if(p != 1) dt.list[["test"]] <- list(x = test_X, y = test_Y)
@@ -62,6 +78,7 @@ dt.reg <- function(data, sam.dat.na, y.name, minsplit = 20, minbucket = round(mi
   y <- as.numeric(sam.dat.na[[y.name]])
   X <- remove.symb(X)
   
+  set.seed(578)
   tr.ind <- y %>% createDataPartition(p = p, list = FALSE)
 
   # Train / Test Split
@@ -71,6 +88,7 @@ dt.reg <- function(data, sam.dat.na, y.name, minsplit = 20, minbucket = round(mi
   test_X = X[-tr.ind,]
   test_Y = y[-tr.ind]
   
+  # CV to get the optimal complex parameter
   new.dat <- cbind(train_X, train_Y)
   colnames(new.dat)[dim(new.dat)[2]] <- y.name
   
@@ -84,12 +102,23 @@ dt.reg <- function(data, sam.dat.na, y.name, minsplit = 20, minbucket = round(mi
   else{
     cp <- fit$cptable[-1,][[1]]
   }
+  
+  # Model with train data
   best.fit <- prune(fit, cp = cp)
+  
+  # Model with the whole data
+  new.dat <- cbind(X, y)
+  colnames(new.dat)[dim(new.dat)[2]] <- y.name
+  
+  set.seed(578)
+  control <- rpart.control(minsplit = minsplit, minbucket = minbucket, cp = 1e-5, xval = nfold)
+  final.best.fit <- rpart(f1, data = new.dat, method = "anova", control = control)
+  final.best.fit <- prune(final.best.fit, cp = cp)
   
   dt.list[["model"]] <- fit
   dt.list[["best.tuned"]] <- cp
   dt.list[["final.model"]] <- best.fit
-  if(p != 1) dt.list[["prediction"]] <- predict(best.fit, test_X)
+  dt.list[["final.model.whole.data"]] <- final.best.fit
   dt.list[["data"]] <- list(x = X, y = y)
   dt.list[["train"]] <- list(x = train_X, y = train_Y)
   if(p != 1) dt.list[["test"]] <- list(x = test_X, y = test_Y)
@@ -141,7 +170,7 @@ dt.pruned <- function(dt.list, name){
 
 dt.fancy.plot <- function(dt.list, name, type = "cla"){
   if(type == "cla"){
-    rpart.plot(dt.list[[name]]$final.model,
+    rpart.plot(dt.list[[name]]$final.model.whole.data,
                type = 4,
                roundint = FALSE, 
                extra = 104, 
@@ -155,7 +184,7 @@ dt.fancy.plot <- function(dt.list, name, type = "cla"){
                box.palette = "BuOr")
   }
   else if(type == "reg"){
-    rpart.plot(dt.list[[name]]$final.model,
+    rpart.plot(dt.list[[name]]$final.model.whole.data,
                type = 4,
                extra = 100, 
                under = TRUE, 
@@ -168,7 +197,7 @@ dt.fancy.plot <- function(dt.list, name, type = "cla"){
                box.palette = "Blue")
   }
   else if(type == "mult"){
-    rpart.plot(dt.list[[name]]$final.model,
+    rpart.plot(dt.list[[name]]$final.model.whole.data,
                type = 4,
                roundint = FALSE, 
                extra = 104, 
@@ -184,7 +213,7 @@ dt.fancy.plot <- function(dt.list, name, type = "cla"){
 }
 
 dt.used.var <- function(dt.list, colnames.list, rank.name){
-  var.used.list <- dt.list[[rank.name]]$final.model$frame
+  var.used.list <- dt.list[[rank.name]]$final.model.whole.data$frame
   var.used.ind <- which(var.used.list$var != "<leaf>")
   var <- unique(var.used.list[var.used.ind,]$var)
   nm <- colnames.df(colnames.list, rank.name)
@@ -198,18 +227,17 @@ dt.used.var <- function(dt.list, colnames.list, rank.name){
 }
 
 dt.summary.table <- function(dt.list, name, type = "cla", y.var){
-  dt.frame <- dt.list[[name]]$final.model$frame
+  dt.frame <- dt.list[[name]]$final.model.whole.data$frame
   leaf.dt.frame <- dt.frame[which(dt.frame$var == "<leaf>"),]
   
   nrj <- leaf.dt.frame$n
   n <- length(nrj)
   
   if(type == "cla"){
-    overally <- round((rep(length(which(y.var == 1))/length(y.var), length(nrj)))*100, digits = 3)
-    ylevel <-as.numeric(levels(factor(y.var)))
+    overally <- round((rep(length(which(y.var == names(table(y.var))[1]))/length(y.var), length(nrj)))*100, digits = 3)
     suby <- numeric()
     for(i in 1:nrow(leaf.dt.frame$yval2)){
-      suby[i] <- sum(leaf.dt.frame$yval2[,c(4,5)][i,] * ylevel)
+      suby[i] <- sum(leaf.dt.frame$yval2[,c(4,5)][i,] * c(0, 1))
     }
     suby <- round(suby*100, digits = 3)
     diff <- round(suby - overally, digits = 3)
@@ -230,13 +258,13 @@ dt.summary.table <- function(dt.list, name, type = "cla", y.var){
 }
 
 dt.importance.df <- function(dt.list, name){
-  df <- as.data.frame(dt.list[[name]]$final.model$variable.importance)
+  df <- as.data.frame(dt.list[[name]]$final.model.whole.data$variable.importance)
   colnames(df) <- "Importance"
   return(df)
 }
 
 dt.imp.plot <- function(dt.list, rank.name){
-  sorted.imp.var <- sort(dt.list[[rank.name]]$final.model$variable.importance)
+  sorted.imp.var <- sort(dt.list[[rank.name]]$final.model.whole.data$variable.importance)
   par(mar=c(5,15,6,3))
   if(length(sorted.imp.var) >= 10){
     barplot(sorted.imp.var[1:10], horiz = TRUE, beside = FALSE, las = 2, space = 0.5, main = sprintf("Coefficients (%s)", str_to_title(rank.name)),
