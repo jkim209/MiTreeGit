@@ -73,7 +73,7 @@ source("Source/MiDataProc.ML.XGB.R")
                     "; GitHub repository (local implementation):", 
                     tags$a(href = "https://github.com/jkim209/MiTreeGit", "https://github.com/jkim209/MiTreeGit"), style = "font-size:13pt")
   HOME_COMMENT3 = p(strong("Maintainers:"), "Jihun Kim (", tags$a(href = "toujours209@gmail.com", "toujours209@gmail.com"), ")", style = "font-size:13pt")
-  HOME_COMMENT4 = p(strong("Reference:"), "Kim J, Koh H. MiTree: A unified web cloud analytic platform for user-friendly and interpretable microbiome data mining using tree-based methods (in review)", style = "font-size:13pt")
+  HOME_COMMENT4 = p(strong("Reference:"), "Kim J, Koh H. MiTree: A unified web cloud analytic platform for user-friendly and interpretable microbiome data mining using tree-based methods. Microorganisms. 2023;11(2816):1-14.", style = "font-size:13pt")
   
   INPUT_PHYLOSEQ_COMMENT1 = p("Description:", br(), br(), "This should be an '.Rdata' or '.rds' file, and the data should be in 'phyloseq' format (see ", 
                               htmltools::a(tags$u("https://bioconductor.org/packages/release/bioc/html/phyloseq.html"), style = "color:red3"),
