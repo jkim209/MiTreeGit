@@ -47,4 +47,4 @@ runGitHub('MiTreeGit', 'jkim209', ref = 'main')
 
 ## Troubleshooting Tips
 
-If you have any problems for using MiTree, please report in issues (https://github.com/jkim209/MiTreeGit/issues) or email Jihun Kim (jihun.kim.3@stonybrook.edu).
+If you have any problems for using MiTree, please report in issues (https://github.com/jkim209/MiTreeGit/issues) or email Jihun Kim (toujours209@gmail.com).
