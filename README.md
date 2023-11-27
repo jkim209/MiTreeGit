@@ -24,7 +24,7 @@ License: GPL 1, GPL 2
 
 ## References
 
-* Kim J, Koh H. MiTree: A unified web cloud analytic platform for user-friendly and interpretable microbiome data mining using tree-based methods. Microorganisms. 2023;11(2816):1-14.
+* Kim J, Koh H. MiTree: A unified web cloud analytic platform for user-friendly and interpretable microbiome data mining using tree-based methods. Microorganisms. 2023;11(11):2816.
 
 
 ## Prerequites
